@@ -5,8 +5,14 @@ import chessMatch.Piece;
 import chessMatch.Position;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.WritableImage;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
@@ -27,6 +33,7 @@ public class BoardController implements Initializable {
     private Position sourcePosition;
     private StackPane selectedCellPane;
     private Border originCellBorder;
+    private ImageView draggedPieceImageView;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -76,11 +83,29 @@ public class BoardController implements Initializable {
             for (int col = 0; col < BOARD_SIZE; col++) {
                 StackPane cellPane = (StackPane) chessBoard.lookup("#cell-" + row + "-" + col);
                 if (cellPane != null) {
-                        final int finalRow = row;
-                        final int finalCol = col;
-                        cellPane.setOnMouseClicked(event -> handlerCellClick(finalRow, finalCol));
+                    final int finalRow = row;
+                    final int finalCol = col;
+
+                    cellPane.setOnMouseClicked(event -> handlerCellClick(finalRow, finalCol));
+                    dragAndDrop(cellPane, finalRow, finalCol);
                 }
             }
+        }
+    }
+
+    private void tryPerformMove(Position targetPosition) {
+        if (sourcePosition == null) {
+            clearSelection();
+            return;
+        }
+
+        try {
+            chessRules.performMove(sourcePosition, targetPosition);
+            updateBoard();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        } finally {
+            clearSelection();
         }
     }
 
@@ -90,12 +115,12 @@ public class BoardController implements Initializable {
 
         clearHighlightPossibleMoves();
 
-        if (sourcePosition == null) {
-            if (chessRules.getBoard().thereIsAPiece(positonClicked)) {
+        if (sourcePosition == null)  {
+            if (chessRules.getBoard().thereIsAPiece(positonClicked) && chessRules.isYourPiece(chessRules.getBoard().piece(positonClicked))) {
                 sourcePosition = positonClicked;
                 selectedCellPane = cellPane;
 
-                selectedCellPane.setBorder(new Border(new BorderStroke(Color.BLUE, BorderStrokeStyle.SOLID, null, new BorderWidths(3))));
+                selectedCellPane.setBorder(new Border(new BorderStroke(Color.BLUE, BorderStrokeStyle.SOLID, null, new BorderWidths(2))));
 
                 highlightPossibleMoves(sourcePosition);
             } else System.out.println("There is no piece in this position");
@@ -105,15 +130,108 @@ public class BoardController implements Initializable {
                 return;
             }
 
-            try {
-                chessRules.performMove(sourcePosition, positonClicked);
-                updateBoard();
+            if (chessRules.getBoard().thereIsAPiece(positonClicked) && chessRules.isYourPiece(chessRules.getBoard().piece(positonClicked))) {
                 clearSelection();
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
-                clearSelection();
+                sourcePosition = positonClicked;
+                selectedCellPane = cellPane;
+
+                selectedCellPane.setBorder(new Border(new BorderStroke(Color.BLUE, BorderStrokeStyle.SOLID, null, new BorderWidths(2))));
+
+                highlightPossibleMoves(sourcePosition);
+                return;
             }
+
+            tryPerformMove(positonClicked);
         }
+    }
+
+
+    private void dragAndDrop(StackPane cellPane, int finalRow, int finalCol) {
+        cellPane.setOnDragDetected(event -> {
+            Position currentPosition = new Position(finalRow, finalCol);
+            if (chessRules.getBoard().thereIsAPiece(currentPosition) && chessRules.isYourPiece(chessRules.getBoard().piece(currentPosition))) {
+                sourcePosition = currentPosition;
+                selectedCellPane = cellPane;
+
+                for (Node node : selectedCellPane.getChildren()) {
+                    if (node instanceof ImageView) {
+                        draggedPieceImageView = (ImageView) node;
+                        break;
+                    }
+                }
+
+                if (draggedPieceImageView != null) {
+                    selectedCellPane.getChildren().remove(draggedPieceImageView);
+
+                    Dragboard db = cellPane.startDragAndDrop(TransferMode.MOVE);
+
+
+
+                    SnapshotParameters snapshotParams = new SnapshotParameters();
+                    snapshotParams.setFill(Color.TRANSPARENT);
+
+                    WritableImage snapshot = new WritableImage(
+                            (int)draggedPieceImageView.getFitWidth(),
+                            (int)draggedPieceImageView.getFitHeight()
+                    );
+                    draggedPieceImageView.snapshot(snapshotParams, snapshot);
+                    db.setDragView(snapshot);
+
+                    db.setDragViewOffsetX(draggedPieceImageView.getFitWidth() / 2);
+                    db.setDragViewOffsetY(draggedPieceImageView.getFitHeight() / 2);
+
+                    ClipboardContent content = new ClipboardContent();
+                    content.putString(finalRow + "," + finalCol);
+                    db.setContent(content);
+
+                    highlightPossibleMoves(sourcePosition);
+
+                    selectedCellPane.setBorder(new Border(new BorderStroke(Color.ORANGE, BorderStrokeStyle.SOLID, null, new BorderWidths(2))));
+                } else {
+                    clearSelection();
+                }
+                event.consume();
+            } else {
+                System.out.println("There is no piece in this position");
+            }
+        });
+
+        cellPane.setOnDragOver(event -> {
+            if (event.getGestureSource() != cellPane && event.getDragboard().hasString()) {
+                Position targetCandidate = new Position(finalRow, finalCol);
+                if (sourcePosition != null && chessRules.getBoard().piece(sourcePosition) != null &&
+                        chessRules.getBoard().piece(sourcePosition).possibleMove(targetCandidate)) {
+                    event.acceptTransferModes(TransferMode.MOVE);
+                }
+            }
+            event.consume();
+        });
+
+        cellPane.setOnDragExited(event -> {
+            event.consume();
+        });
+
+        cellPane.setOnDragDropped(event -> {
+            Dragboard db = event.getDragboard();
+            boolean success = false;
+            if (db.hasString() && sourcePosition != null) {
+                Position targetPosition = new Position(finalRow, finalCol);
+                tryPerformMove(targetPosition);
+            }
+            event.setDropCompleted(success);
+            event.consume();
+        });
+
+        cellPane.setOnDragDone(event -> {
+            if (!event.isDropCompleted() && draggedPieceImageView != null && selectedCellPane != null) {
+                if (!selectedCellPane.getChildren().contains(draggedPieceImageView)) {
+                    selectedCellPane.getChildren().add(draggedPieceImageView);
+                }
+            }
+            clearSelection();
+            draggedPieceImageView = null;
+            event.consume();
+        });
     }
 
     private void clearSelection() {
@@ -182,6 +300,8 @@ public class BoardController implements Initializable {
                         StackPane targetPane = (StackPane) chessBoard.lookup("#cell-" + row + "-" + col);
 
                         if(targetPane != null) {
+                            // Certifique-se de que a ImageView é o único ImageView no StackPane
+                            // para facilitar a recuperação depois
                             targetPane.getChildren().add(imageView);
                         } else {
                             System.err.println("Cell not found");
@@ -190,9 +310,7 @@ public class BoardController implements Initializable {
                         e.printStackTrace();
                     }
                 }
-
             }
-
         }
     }
 }
