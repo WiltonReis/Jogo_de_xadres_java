@@ -300,8 +300,6 @@ public class BoardController implements Initializable {
                         StackPane targetPane = (StackPane) chessBoard.lookup("#cell-" + row + "-" + col);
 
                         if(targetPane != null) {
-                            // Certifique-se de que a ImageView é o único ImageView no StackPane
-                            // para facilitar a recuperação depois
                             targetPane.getChildren().add(imageView);
                         } else {
                             System.err.println("Cell not found");
