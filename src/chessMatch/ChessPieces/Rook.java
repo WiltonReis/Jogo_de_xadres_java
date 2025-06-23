@@ -1,59 +1,58 @@
 package chessMatch.ChessPieces;
 
-import chessMatch.Board;
-import chessMatch.Color;
-import chessMatch.Piece;
-import chessMatch.Position;
+import chessMatch.*;
+
+import static chessMatch.Color.WHITE;
 
 public class Rook extends Piece {
 
-    public Rook(Color color, Board board) {
-        super(color, board);
+    public Rook(Color color, Board board, ChessRules chessRules) {
+        super(color, board, chessRules);
     }
 
     @Override
-    public boolean[][] possibleMoves() {
+    public boolean[][] movesLogic() {
         boolean[][] moves = new boolean[8][8];
 
         Position p = new Position(0, 0);
 
-        // above
+        //above
         p.setValues(position.getRow() - 1, position.getColumn());
-        while (board.positionExists(p) && !board.thereIsAPiece(p)) {
+        while (getBoard().positionExists(p) && !getBoard().thereIsAPiece(p)) {
             moves[p.getRow()][p.getColumn()] = true;
             p.setRow(p.getRow() - 1);
         }
-        if (board.positionExists(p) && isThereOpponentPiece(p)) {
+        if (getBoard().positionExists(p) && isThereOpponentPiece(p)) {
             moves[p.getRow()][p.getColumn()] = true;
         }
 
-        // left
+        //left
         p.setValues(position.getRow(), position.getColumn() - 1);
-        while (board.positionExists(p) && !board.thereIsAPiece(p)) {
+        while (getBoard().positionExists(p) && !getBoard().thereIsAPiece(p)) {
             moves[p.getRow()][p.getColumn()] = true;
             p.setColumn(p.getColumn() - 1);
         }
-        if (board.positionExists(p) && isThereOpponentPiece(p)) {
+        if (getBoard().positionExists(p) && isThereOpponentPiece(p)) {
             moves[p.getRow()][p.getColumn()] = true;
         }
 
-        // right
+        //right
         p.setValues(position.getRow(), position.getColumn() + 1);
-        while (board.positionExists(p) && !board.thereIsAPiece(p)) {
+        while (getBoard().positionExists(p) && !getBoard().thereIsAPiece(p)) {
             moves[p.getRow()][p.getColumn()] = true;
             p.setColumn(p.getColumn() + 1);
         }
-        if (board.positionExists(p) && isThereOpponentPiece(p)) {
+        if (getBoard().positionExists(p) && isThereOpponentPiece(p)) {
             moves[p.getRow()][p.getColumn()] = true;
         }
 
-        // below
+        //below
         p.setValues(position.getRow() + 1, position.getColumn());
-        while (board.positionExists(p) && !board.thereIsAPiece(p)) {
+        while (getBoard().positionExists(p) && !getBoard().thereIsAPiece(p)) {
             moves[p.getRow()][p.getColumn()] = true;
             p.setRow(p.getRow() + 1);
         }
-        if (board.positionExists(p) && isThereOpponentPiece(p)) {
+        if (getBoard().positionExists(p) && isThereOpponentPiece(p)) {
             moves[p.getRow()][p.getColumn()] = true;
         }
 
@@ -62,10 +61,6 @@ public class Rook extends Piece {
 
     @Override
     public String toString() {
-        if (color == Color.WHITE) {
-            return "whiteRook";
-        } else {
-            return "blackRook";
-        }
+        return Color.WHITE == color ? "whiteRook" : "blackRook";
     }
 }
