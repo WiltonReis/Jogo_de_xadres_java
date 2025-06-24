@@ -30,6 +30,10 @@ public class ChessRules {
         return turn;
     }
 
+    public List<Piece> getCapturedPieces() {
+        return capturedPieces;
+    }
+
     public Piece performMove(Position source, Position target) {
         Position sourcePosition = validateSource(source);
         Position targetPosition = validateTarget(target, sourcePosition);
