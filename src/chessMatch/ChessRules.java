@@ -5,6 +5,7 @@ import chessMatch.ChessPieces.Rook;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.spi.AbstractResourceBundleProvider;
 
 public class ChessRules {
 
@@ -12,6 +13,7 @@ public class ChessRules {
     private Color turn;
 
     private boolean check;
+    private boolean checkmate;
 
     private List<Piece> piecesOnTheBoard = new ArrayList<>();
     private List<Piece> capturedPieces = new ArrayList<>();
@@ -34,20 +36,27 @@ public class ChessRules {
         return capturedPieces;
     }
 
+    public boolean getCheckmate() {
+        return checkmate;
+    }
+
     public Piece performMove(Position source, Position target) {
         Position sourcePosition = validateSource(source);
         Position targetPosition = validateTarget(target, sourcePosition);
         Piece capturedPiece = makeMove(sourcePosition, targetPosition);
 
         if (testCheck(turn)){
-            //testCheckmate();
             check = false;
             undoMove(sourcePosition, targetPosition, capturedPiece);
             throw new ChessException("You can't put yourself in check");
         }
 
-
         if (testCheck(opponent(turn))){
+            if (testCheckmate(opponent(turn))){
+                checkmate = true;
+                System.out.println("Checkmate!");
+                return null;
+            }
             check = true;
             System.out.println("Check!");
         }
@@ -93,6 +102,30 @@ public class ChessRules {
         return piecesOnTheBoard.stream()
                 .filter(piece -> piece.getColor() == opponent(color))
                 .anyMatch(piece -> piece.possibleAttack(kingPosition));
+    }
+
+    public boolean testCheckmate(Color color) {
+        List<Piece> pieces = piecesOnTheBoard.stream()
+                .filter(piece -> piece.getColor() == color)
+                .toList();
+
+        for (Piece piece : pieces) {
+            boolean[][] possibleMoves = piece.movesLogic();
+
+            for (int i = 0; i < possibleMoves.length; i++) {
+                for (int j = 0; j < possibleMoves[i].length; j++) {
+                    if (possibleMoves[i][j]) {
+                        Position source = piece.getPosition();
+                        Position target = new Position(i, j);
+                        Piece capturedPiece = makeMove(source, target);
+                        boolean testCheck = testCheck(color);
+                        undoMove(source, target, capturedPiece);
+                        if (!testCheck) return false;
+                    }
+                }
+            }
+        }
+        return true;
     }
 
     private void changeTurn() {
