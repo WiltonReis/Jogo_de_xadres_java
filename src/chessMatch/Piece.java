@@ -62,6 +62,16 @@ public abstract class Piece {
         return movesLogic()[position.getRow()][position.getColumn()];
     }
 
+    public boolean isThereAnyPossibleMove() {
+        boolean[][] moves = possibleMoves();
+        for (int i = 0; i < moves.length; i++) {
+            for (int j = 0; j < moves[i].length; j++) {
+                if (moves[i][j]) return true;
+            }
+        }
+        return false;
+    }
+
     public boolean isThereOpponentPiece(Position position) {
         if(!board.thereIsAPiece(position)) return false;
         return board.piece(position).getColor() != color;
