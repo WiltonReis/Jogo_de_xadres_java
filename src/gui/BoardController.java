@@ -118,7 +118,6 @@ public class BoardController implements Initializable {
             return;
         }
         try {
-            System.out.println("Trying to move from " + sourcePosition + " to " + targetPosition);
             chessRules.performMove(sourcePosition, targetPosition);
             updateBoard();
             if (chessRules.testCheckmate(chessRules.opponent(chessRules.getTurn()))) loadCheckmateView();
