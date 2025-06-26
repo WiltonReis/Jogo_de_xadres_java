@@ -5,7 +5,7 @@ public abstract class Piece {
     protected Color color;
     protected Position position;
     protected Board board;
-    private ChessRules chessRules;
+    protected ChessRules chessRules;
     protected int moveCount;
 
     public Piece(Color color, Board board, ChessRules chessRules) {

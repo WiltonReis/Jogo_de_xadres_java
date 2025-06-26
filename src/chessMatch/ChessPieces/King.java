@@ -54,6 +54,39 @@ public class King extends Piece {
         if (board.positionExists(p) && !board.thereIsAPiece(p)) moves[p.getRow()][p.getColumn()] = true;
         if (board.positionExists(p) && isThereOpponentPiece(p)) moves[p.getRow()][p.getColumn()] = true;
 
+        // #specialmove castling
+        if (moveCount == 0 && !chessRules.getCheck()) {
+            Position rookPosition = new Position(0,0);
+            Piece rook = null;
+
+            // right castling
+            rookPosition.setValues(position.getRow(), position.getColumn() + 3);
+            if (board.thereIsAPiece(rookPosition)){
+                rook = board.piece(rookPosition);
+                if (rook instanceof Rook && ((Rook) rook).fitForCastling()) {
+                    Position p1 = new Position(position.getRow(), position.getColumn() + 1);
+                    Position p2 = new Position(position.getRow(), position.getColumn() + 2);
+                    if (!board.thereIsAPiece(p1) && !board.thereIsAPiece(p2)) {
+                        moves[position.getRow()][position.getColumn() + 2] = true;
+                    }
+                }
+            }
+
+            // left castling
+            rookPosition.setValues(position.getRow(), position.getColumn() - 4);
+            if (board.thereIsAPiece(rookPosition)){
+                rook = board.piece(rookPosition);
+                if (rook instanceof Rook && ((Rook) rook).fitForCastling()) {
+                    Position p1 = new Position(position.getRow(), position.getColumn() - 1);
+                    Position p2 = new Position(position.getRow(), position.getColumn() - 2);
+                    Position p3 = new Position(position.getRow(), position.getColumn() - 3);
+                    if (!board.thereIsAPiece(p1) && !board.thereIsAPiece(p2) && !board.thereIsAPiece(p3)) {
+                        moves[position.getRow()][position.getColumn() - 2] = true;
+                    }
+                }
+            }
+        }
+
         return moves;
     }
 

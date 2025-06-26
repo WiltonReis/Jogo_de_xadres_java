@@ -46,4 +46,5 @@ public class Board {
     public boolean thereIsAPiece(Position position) {
         return piece(position) != null;
     }
+
 }
