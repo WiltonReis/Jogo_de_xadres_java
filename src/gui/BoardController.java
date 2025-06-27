@@ -7,6 +7,7 @@ import chessMatch.Position;
 import javafx.animation.FadeTransition;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.Button;
@@ -28,6 +29,9 @@ import java.net.URL;
 import java.util.ResourceBundle;
 
 public class BoardController implements Initializable {
+
+    @FXML
+    private StackPane mainPane;
 
     @FXML
     private MenuItem newGameMenuItem;
@@ -120,9 +124,10 @@ public class BoardController implements Initializable {
         try {
             chessRules.performMove(sourcePosition, targetPosition);
             updateBoard();
+            if (chessRules.getPromoted() != null) loadPromotedPieceView(chessRules.getPromoted());
             if (chessRules.testCheckmate(chessRules.opponent(chessRules.getTurn()))) loadCheckmateView();
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            e.printStackTrace();
         } finally {
             clearSelection();
         }
@@ -255,6 +260,65 @@ public class BoardController implements Initializable {
             draggedPieceImageView = null;
             event.consume();
         });
+    }
+
+    private void loadPromotedPieceView(Piece pawnPromoted) {
+
+        chessBoard.setDisable(true);
+
+        int row = pawnPromoted.getPosition().getRow();
+        int col = pawnPromoted.getPosition().getColumn();
+
+        HBox promotionBox = new HBox(10);
+        promotionBox.setPadding(new Insets(10));
+
+        promotionBox.getStyleClass().add("promoted-view");
+
+        String colorPrefix = (pawnPromoted.getColor() == chessMatch.Color.WHITE) ? "white" : "black";
+        String[] Pieces = {"Queen", "Rook", "Bishop", "Knight"};
+
+        for (String pieceName : Pieces) {
+            ImageView pieceImageView = new ImageView(new Image("/gui/pieces/" + colorPrefix + pieceName + ".png"));
+            pieceImageView.setFitWidth(40);
+            pieceImageView.setFitHeight(40);
+
+            pieceImageView.setOnMouseClicked(event -> {
+                chessRules.replacePromotedPiece(pieceName);
+                mainPane.getChildren().remove(promotionBox);
+                chessBoard.setDisable(false);
+                updateBoard();
+            });
+
+            promotionBox.getChildren().add(pieceImageView);
+        }
+
+        double cellX = (col + 1) * CELL_SIZE;
+        double cellY = (row + 1) * CELL_SIZE;
+        double boxWidthEstimate = 210;
+        double boxHeightEstimate = 60;
+
+        if (col > 3) {
+            promotionBox.setTranslateX(cellX - boxWidthEstimate * 1.3 - 120);
+            if (pawnPromoted.getColor() == chessMatch.Color.WHITE) {
+                promotionBox.setTranslateY(cellY - boxHeightEstimate * 4.5 + 45);
+                promotionBox.getStyleClass().add("promotion-pane-wr");
+            } else {
+                promotionBox.setTranslateY(cellY - boxHeightEstimate * 4.5 - 45);
+                promotionBox.getStyleClass().add("promotion-pane-br");
+            }
+        } else {
+            promotionBox.setTranslateX(cellX - boxWidthEstimate * 1.3 + 120);
+            if (pawnPromoted.getColor() == chessMatch.Color.WHITE) {
+                promotionBox.setTranslateY(cellY - boxHeightEstimate * 4.5 + 60);
+                promotionBox.getStyleClass().add("promotion-pane-wl");
+            } else {
+                promotionBox.setTranslateY(cellY - boxHeightEstimate * 4.5 - 60);
+                promotionBox.getStyleClass().add("promotion-pane-bl");
+            }
+        }
+
+
+        mainPane.getChildren().add(promotionBox);
     }
 
     private ImageView findImageViewInCell(StackPane cellPane) {
