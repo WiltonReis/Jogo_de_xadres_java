@@ -46,7 +46,10 @@ public class BoardController implements Initializable {
     private HBox capturedPiecesBlack;
 
     @FXML
-    private VBox checkmateView;
+    private VBox endGameView;
+
+    @FXML
+    private Label titleLabel;
 
     @FXML
     private Label playerWinsLabel;
@@ -69,8 +72,8 @@ public class BoardController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        checkmateView.setVisible(false);
-        checkmateView.setManaged(false);
+        endGameView.setVisible(false);
+        endGameView.setManaged(false);
 
         chessRules = new ChessRules();
         drawBoard();
@@ -125,7 +128,9 @@ public class BoardController implements Initializable {
             chessRules.performMove(sourcePosition, targetPosition);
             updateBoard();
             if (chessRules.getPromoted() != null) loadPromotedPieceView(chessRules.getPromoted());
-            if (chessRules.testCheckmate(chessRules.opponent(chessRules.getTurn()))) loadCheckmateView();
+            if (chessRules.getCheckmate()) loadCheckmateView();
+            if (chessRules.getStalemate()) loadStalemateView();
+            if (chessRules.getDraw()) loadDrawView();
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -341,7 +346,7 @@ public class BoardController implements Initializable {
     }
 
     private void highlightPossibleMoves(Position sourcePosition) {
-        boolean[][] possibleMoves = chessRules.getBoard().piece(sourcePosition).possibleMoves();
+        boolean[][] possibleMoves = chessRules.legalMovement(sourcePosition);
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
                 if (possibleMoves[row][col]) {
@@ -443,13 +448,44 @@ public class BoardController implements Initializable {
     }
 
     private void loadCheckmateView() {
+        titleLabel.setText("Checkmate");
         String winner = chessRules.getTurn() == chessMatch.Color.WHITE ? "Brancas vencem" : "Pretas vencem";
         playerWinsLabel.setText(winner);
 
-        checkmateView.setManaged(true);
-        checkmateView.setVisible(true);
+        endGameView.setManaged(true);
+        endGameView.setVisible(true);
 
-        FadeTransition ft = new FadeTransition(Duration.millis(500), checkmateView);
+        FadeTransition ft = new FadeTransition(Duration.millis(500), endGameView);
+        ft.setFromValue(0.0);
+        ft.setToValue(1.0);
+        ft.play();
+
+        chessBoard.setDisable(true);
+    }
+
+    private void loadStalemateView() {
+        titleLabel.setText("Stalemate");
+        playerWinsLabel.setText("Draw");
+
+        endGameView.setManaged(true);
+        endGameView.setVisible(true);
+
+        FadeTransition ft = new FadeTransition(Duration.millis(500), endGameView);
+        ft.setFromValue(0.0);
+        ft.setToValue(1.0);
+        ft.play();
+
+        chessBoard.setDisable(true);
+    }
+
+    private void loadDrawView() {
+        titleLabel.setText("Insufficient material");
+        playerWinsLabel.setText("Draw");
+
+        endGameView.setManaged(true);
+        endGameView.setVisible(true);
+
+        FadeTransition ft = new FadeTransition(Duration.millis(500), endGameView);
         ft.setFromValue(0.0);
         ft.setToValue(1.0);
         ft.play();
@@ -458,12 +494,12 @@ public class BoardController implements Initializable {
     }
 
     private void newGame() {
-        FadeTransition ft = new FadeTransition(Duration.millis(500), checkmateView);
+        FadeTransition ft = new FadeTransition(Duration.millis(500), endGameView);
         ft.setFromValue(1.0);
         ft.setToValue(0.0);
         ft.setOnFinished(event -> {
-            checkmateView.setVisible(false);
-            checkmateView.setManaged(false);
+            endGameView.setVisible(false);
+            endGameView.setManaged(false);
         });
         ft.play();
 

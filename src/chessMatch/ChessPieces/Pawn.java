@@ -89,11 +89,6 @@ public class Pawn extends Piece {
         return moves;
     }
 
-    @Override
-    public boolean possibleAttack(Position position) {
-        if(movesLogic()[position.getRow()][position.getColumn()] && position.getColumn() != this.position.getColumn()) return true;
-        return false;
-    }
 
     @Override
     public String toString() {

@@ -40,45 +40,9 @@ public abstract class Piece {
 
     public abstract boolean[][] movesLogic();
 
-    public boolean[][] possibleMoves() {
-        boolean[][] moves = movesLogic();
-        Piece capturedPiece;
-
-        Position sourcePosition = position;
-
-        for (int i = 0; i < moves.length; i++) {
-            for (int j = 0; j < moves[i].length; j++) {
-                if (moves[i][j]) {
-                     Position targetPosition = new Position(i, j);
-
-                    capturedPiece = chessRules.makeMove(sourcePosition, targetPosition);
-
-                    if (chessRules.testCheck(color)) {
-                        moves[i][j] = false;
-                    }
-                    chessRules.undoMove(sourcePosition, targetPosition, capturedPiece);
-                }
-            }
-        }
-        return moves;
-    }
 
     public boolean possibleMove(Position position) {
-        return possibleMoves()[position.getRow()][position.getColumn()];
-    }
-
-    public boolean possibleAttack(Position position) {
         return movesLogic()[position.getRow()][position.getColumn()];
-    }
-
-    public boolean isThereAnyPossibleMove() {
-        boolean[][] moves = possibleMoves();
-        for (int i = 0; i < moves.length; i++) {
-            for (int j = 0; j < moves[i].length; j++) {
-                if (moves[i][j]) return true;
-            }
-        }
-        return false;
     }
 
     public boolean isThereOpponentPiece(Position position) {
