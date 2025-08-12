@@ -14,6 +14,7 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
+<?import javafx.scene.control.ScrollPane?>
 <VBox prefHeight="635.0" prefWidth="484.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gui.BoardController">
    <children>
       <MenuBar>
@@ -32,10 +33,18 @@
       </MenuBar>
       <BorderPane prefHeight="615.0" prefWidth="484.0">
          <top>
-            <HBox fx:id="capturedPiecesWhite" prefHeight="65.0" prefWidth="768.0" styleClass="captured-pieces-area" BorderPane.alignment="CENTER" />
+            <ScrollPane hbarPolicy="ALWAYS" vbarPolicy="NEVER" fitToWidth="true" styleClass="captured-pieces-scrollpane" BorderPane.alignment="CENTER">
+               <content>
+                  <HBox fx:id="capturedPiecesWhite" prefHeight="65.0" prefWidth="768.0" styleClass="captured-pieces-area" />
+               </content>
+            </ScrollPane>
          </top>
          <bottom>
-            <HBox fx:id="capturedPiecesBlack" prefHeight="65.0" prefWidth="768.0" styleClass="captured-pieces-area" BorderPane.alignment="CENTER" />
+            <ScrollPane hbarPolicy="ALWAYS" vbarPolicy="NEVER" fitToWidth="true" styleClass="captured-pieces-scrollpane" BorderPane.alignment="CENTER">
+               <content>
+                  <HBox fx:id="capturedPiecesBlack" prefHeight="65.0" prefWidth="768.0" styleClass="captured-pieces-area" />
+               </content>
+            </ScrollPane>
          </bottom>
          <center>
             <StackPane fx:id="mainPane" prefHeight="480.0" prefWidth="480.0" BorderPane.alignment="CENTER">
@@ -62,9 +71,9 @@
                         <RowConstraints minHeight="10.0" prefHeight="60.0" vgrow="SOMETIMES" />
                      </rowConstraints>
                   </GridPane>
-                  <VBox fx:id="checkmateView" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="168.0" prefWidth="330.0" styleClass="checkmate-view">
+                  <VBox fx:id="endGameView" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="168.0" prefWidth="330.0" styleClass="checkmate-view">
                      <children>
-                        <Label alignment="CENTER" prefHeight="50.0" prefWidth="517.0" text="Chechmate!">
+                        <Label fx:id="titleLabel" alignment="CENTER" prefHeight="50.0" prefWidth="517.0">
                            <VBox.margin>
                               <Insets />
                            </VBox.margin>

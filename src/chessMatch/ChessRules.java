@@ -12,6 +12,8 @@ public class ChessRules {
 
     private boolean check;
     private boolean checkmate;
+    private boolean stalemate;
+    private boolean draw;
     private Piece enPassant;
     private Piece promoted;
 
@@ -52,6 +54,14 @@ public class ChessRules {
         return checkmate;
     }
 
+    public boolean getStalemate() {
+        return stalemate;
+    }
+
+    public boolean getDraw() {
+        return draw;
+    }
+
     public Piece performMove(Position source, Position target) {
         Position sourcePosition = validateSource(source);
         Position targetPosition = validateTarget(target, sourcePosition);
@@ -66,7 +76,7 @@ public class ChessRules {
         }
 
         if (testCheck(opponent(turn))){
-            if (testCheckmate(opponent(turn))){
+            if (!hasAnyLegalMove(opponent(turn))){
                 checkmate = true;
                 System.out.println("Checkmate!");
                 return null;
@@ -74,6 +84,12 @@ public class ChessRules {
             check = true;
             System.out.println("Check!");
         }
+
+        if (!hasAnyLegalMove(opponent(turn)))
+            stalemate = true;
+
+        if (testInsufficientMaterial())
+            draw = true;
 
         //#specialmove pawn
         if(movedPiece instanceof Pawn) {
@@ -217,31 +233,68 @@ public class ChessRules {
         Position kingPosition = king(color).getPosition();
         return piecesOnTheBoard.stream()
                 .filter(piece -> piece.getColor() == opponent(color))
-                .anyMatch(piece -> piece.possibleAttack(kingPosition));
+                .anyMatch(piece -> piece.possibleMove(kingPosition));
     }
 
-    public boolean testCheckmate(Color color) {
-        List<Piece> pieces = piecesOnTheBoard.stream()
+    public boolean testInsufficientMaterial() {
+        if (piecesOnTheBoard.size() == 2) return true;
+
+        List<Bishop> bishopsList = piecesOnTheBoard.stream().filter(piece -> piece instanceof Bishop).map(piece -> (Bishop)piece).toList();
+
+        int knights = (int)piecesOnTheBoard.stream().filter(piece -> piece instanceof Knight).count();;
+
+        int bishops = bishopsList.size();
+
+        if (piecesOnTheBoard.size() == 3) if (bishops == 1 || knights == 1) return true;
+
+
+        if (piecesOnTheBoard.size() == 4){
+            if (knights == 2) return true;
+
+            if (bishops == 2){
+                if (bishopsList.stream().allMatch(b -> (b.getPosition().getColumn() + b.getPosition().getRow()) % 2 ==
+                        (bishopsList.get(0).getPosition().getColumn() + bishopsList.get(0).getPosition().getRow()) % 2)) return true;
+            }
+
+        }
+        return false;
+    }
+
+    public boolean[][] legalMovement(Position sourcePosition){
+        Piece piece = board.piece(sourcePosition);
+        boolean[][] legalMoves = new boolean[8][8];
+
+        boolean[][] movesLogic = piece.movesLogic();
+
+        for (int i = 0; i < movesLogic.length; i++) {
+            for (int j = 0; j < movesLogic[i].length; j++) {
+                if (movesLogic[i][j]) {
+                    Position targetPosition = new Position(i, j);
+
+                    Piece capturedPiece = makeMove(sourcePosition, targetPosition);
+                    boolean testCheck = testCheck(piece.getColor());
+                    undoMove(sourcePosition, targetPosition, capturedPiece);
+                    if (!testCheck) legalMoves[i][j] = true;
+                }
+                }
+            }
+        return legalMoves;
+    }
+
+    private boolean hasAnyLegalMove(Color color) {
+         List<Piece> pieces = piecesOnTheBoard.stream()
                 .filter(piece -> piece.getColor() == color)
                 .toList();
 
         for (Piece piece : pieces) {
-            boolean[][] possibleMoves = piece.movesLogic();
-
-            for (int i = 0; i < possibleMoves.length; i++) {
-                for (int j = 0; j < possibleMoves[i].length; j++) {
-                    if (possibleMoves[i][j]) {
-                        Position source = piece.getPosition();
-                        Position target = new Position(i, j);
-                        Piece capturedPiece = makeMove(source, target);
-                        boolean testCheck = testCheck(color);
-                        undoMove(source, target, capturedPiece);
-                        if (!testCheck) return false;
-                    }
+            boolean[][] legalMoves = legalMovement(piece.getPosition());
+            for (int i = 0; i < legalMoves.length; i++) {
+                for (int j = 0; j < legalMoves[i].length; j++) {
+                    if (legalMoves[i][j]) return true;
                 }
             }
         }
-        return true;
+        return false;
     }
 
     private void changeTurn() {
