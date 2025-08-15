@@ -20,12 +20,6 @@
     -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.7), 10, 0.5, 0, 0);
 }
 
-.chess-cell {
-    -fx-border-color: #666666;
-    -fx-border-width: 1px;
-    -fx-border-style: solid;
-}
-
 .selected-cell {
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 10, 0.7, 0, 0);
 }
@@ -53,3 +47,15 @@
 .promotion-pane-br { -fx-background-radius: 10 10 0 10; }
 
 .promotion-pane-bl { -fx-background-radius: 10 10 10 0; }
+
+.theme-classic .light-cell { -fx-fill: #F8DEE7; }  /* rosa clarinho */
+.theme-classic .dark-cell { -fx-fill: #F06292; }   /* pink médio */
+
+.theme-blue .light-cell { -fx-fill: #D4E1C6; } /* azul esverdeado claro */
+.theme-blue .dark-cell { -fx-fill: #8BB0BF; }  /* azul mais saturado */
+
+.theme-wood .light-cell { -fx-fill: #F0D9B5; } /* marrom claro/bege madeira */
+.theme-wood .dark-cell { -fx-fill: #B58863; }  /* marrom escuro */
+
+.theme-dark .light-cell { -fx-fill: #7A7A7A; }    /* cinza médio */
+.theme-dark .dark-cell { -fx-fill: #4A4A4A; }     /* cinza escuro, não preto */
