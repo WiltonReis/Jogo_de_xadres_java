@@ -46,7 +46,7 @@ public class ThemesViewController implements Initializable {
     }
 
     public void onThemePinkAction() {
-        theme = "classic";
+        theme = "pink";
     }
 
     public void onThemeBlueAction() {

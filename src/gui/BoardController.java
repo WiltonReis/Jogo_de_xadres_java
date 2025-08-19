@@ -40,12 +40,6 @@ public class BoardController implements Initializable {
     private StackPane mainPane;
 
     @FXML
-    private MenuItem newGameMenuItem;
-
-    @FXML
-    private MenuItem themesMenuItem;
-
-    @FXML
     private GridPane chessBoard;
 
     @FXML
