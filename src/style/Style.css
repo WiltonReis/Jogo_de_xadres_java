@@ -1,5 +1,5 @@
 .root {
-    -fx-background-color: #333333;
+    -fx-background-color: #3D3D3D;
 }
 
 .grid-pane {
@@ -26,10 +26,11 @@
 
 .button-bar .button:hover {
     -fx-background-color: #4a4a4a;
+    -fx-cursor: hand;
 }
 
 .captured-pieces-area {
-    -fx-background-color: #392613;
+    -fx-background-color: #262626;
     -fx-spacing: 5px;
     -fx-alignment: CENTER;
     -fx-border-color: #000000;
@@ -48,9 +49,9 @@
 
 .captured-pieces-scrollpane .scroll-bar .thumb {
     -fx-background-color: #808080;
-        -fx-background-radius: 100;
-        -fx-pref-width: 10px;
-        -fx-pref-height: 10px;
+    -fx-background-radius: 100;
+    -fx-pref-width: 10px;
+    -fx-pref-height: 10px;
 }
 
 .captured-pieces-scrollpane .scroll-bar:horizontal .increment-button,
@@ -68,29 +69,72 @@
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 10, 0.7, 0, 0);
 }
 
-.checkmate-view {
-    -fx-background-color: #DEB887;
-        -fx-border-radius: 10px;
-    -fx-border-color: #808000;
-        -fx-border-width: 5px;
-        -fx-border-radius: 10px;
+#endGameView {
+    -fx-background-color: #3D3D3D;
+    -fx-background-radius: 10px;
+    -fx-border-color: #262626;
+    -fx-border-radius: 10px;
+    -fx-border-width: 3px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 10, 0.5, 0, 0);
+}
+
+#endGameView .label {
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+}
+
+#endGameView #titleLabel {
+    -fx-font-size: 30px;
+}
+
+#endGameView .button {
+    -fx-background-color: #4a4a4a;
+    -fx-background-radius: 5px;
+    -fx-border-color: #262626;
+    -fx-border-width: 2px;
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
+}
+
+#endGameView .button:hover {
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 10, 0.5, 0, 0);
+    -fx-cursor: hand;
 }
 
 .promoted-view{
-    -fx-background-color: #DEB887;
+    -fx-background-color: #3D3D3D;
+    -fx-border-color: #262626;
+    -fx-border-width: 3px;
     -fx-max-width: 210px;
     -fx-max-height: 60px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 10, 0.5, 0, 0);
+}
+
+.promoted-view *:hover {
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 10, 0.5, 0, 0);
+    -fx-cursor: hand;
 }
 
 .promotion-pane-wr {
     -fx-background-radius: 10 0 10 10;
+    -fx-border-radius: 10 0 10 10;
 }
 
-.promotion-pane-wl { -fx-background-radius: 0 10 10 10; }
+.promotion-pane-wl {
+    -fx-background-radius: 0 10 10 10;
+    -fx-border-radius: 0 10 10 10;
+}
 
-.promotion-pane-br { -fx-background-radius: 10 10 0 10; }
+.promotion-pane-br {
+    -fx-background-radius: 10 10 0 10;
+    -fx-border-radius: 10 10 0 10;
+}
 
-.promotion-pane-bl { -fx-background-radius: 10 10 10 0; }
+.promotion-pane-bl {
+    -fx-background-radius: 10 10 10 0;
+    -fx-border-radius: 10 10 10 0;
+}
 
 .theme-pink .light-cell { -fx-fill: #F8DEE7; }
 .theme-pink .dark-cell { -fx-fill: #F06292; }

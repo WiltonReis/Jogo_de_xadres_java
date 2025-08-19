@@ -1,36 +1,74 @@
-/* Styles para o painel principal do ThemesView */
 .root {
-    -fx-background-color: #F5F5DC; /* Creme suave */
-    -fx-border-color: #4C774C;     /* Verde escuro */
-    -fx-border-width: 2px;
+    -fx-background-color: #3D3D3D;
+    -fx-border-color: #262626;
+    -fx-border-width: 3px;
     -fx-border-radius: 10px;
     -fx-background-radius: 10px;
-    -fx-padding: 10px;             /* Espaço interno */
+    -fx-padding: 10px;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 10, 0.5, 0, 0);
 }
 
-/* GridPane que contém os botões de tema */
 .grid-pane {
-    -fx-hgap: 10px;  /* Espaçamento horizontal entre botões */
-    -fx-vgap: 10px;  /* Espaçamento vertical entre botões */
+    -fx-hgap: 10px;
+    -fx-vgap: 10px;
 }
 
-.close-button {
-    -fx-background-color: red;      /* fundo vermelho */
-    -fx-text-fill: white;           /* X branco */
-    -fx-font-weight: bold;          /* X grosso */
-    -fx-font-size: 12px;            /* tamanho do X */
-    -fx-border-color: black;        /* borda preta */
+.theme-button {
+     -fx-background-color: transparent;
+     -fx-background-repeat: no-repeat;
+     -fx-background-position: center center;
+     -fx-background-size: cover;
+     -fx-border-color: black;
+     -fx-border-width: 1.5px;
+     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 10, 0.5, 0, 0);
+}
+
+.theme-button:hover {
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 10, 0.5, 0, 0);
+    -fx-cursor: hand;
+}
+
+.theme-button:focused {
+    -fx-border-color: green;
+}
+
+#themeWood { -fx-background-image: url("/gui/themes/imagesThemes/WoodTheme.png"); }
+#themeDark { -fx-background-image: url("/gui/themes/imagesThemes/DarkTheme.png"); }
+#themePink { -fx-background-image: url("/gui/themes/imagesThemes/PinkTheme.png"); }
+#themeBlue { -fx-background-image: url("/gui/themes/imagesThemes/BlueTheme.png"); }
+
+
+.apply-button {
+    -fx-background-color: #4a4a4a;
+    -fx-border-color: #000000;
     -fx-border-width: 1px;
-    -fx-border-radius: 0;           /* quadrado */
-    -fx-background-radius: 0;       /* quadrado */
-    -fx-cursor: hand;               /* cursor de mão */
-    -fx-padding: 0;                 /* remove espaçamento interno */
-    -fx-alignment: center;          /* centraliza o X */
-    -fx-min-width: 18px;            /* tamanho fixo */
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-padding: 0px;
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
+}
+
+.apply-button:hover {
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 10, 0.5, 0, 0);
+    -fx-cursor: hand;
+}
+.close-button {
+    -fx-background-color: red;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+    -fx-border-color: black;
+    -fx-border-width: 1px;
+    -fx-border-radius: 0;
+    -fx-background-radius: 0;
+    -fx-cursor: hand;
+    -fx-padding: 0;
+    -fx-alignment: center;
+    -fx-min-width: 18px;
     -fx-min-height: 18px;
 }
 
 .close-button:hover {
-    -fx-background-color: darkred;  /* mais escuro no hover */
+    -fx-background-color: darkred;
 }
