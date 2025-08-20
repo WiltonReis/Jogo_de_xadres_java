@@ -4,10 +4,14 @@ import chessMatch.ChessRules;
 import chessMatch.Piece;
 import chessMatch.Position;
 
+import javafx.animation.FadeTransition;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
 import javafx.scene.SnapshotParameters;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
@@ -18,11 +22,15 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
+import javafx.util.Duration;
 
 import java.net.URL;
 import java.util.ResourceBundle;
 
 public class BoardController implements Initializable {
+
+    @FXML
+    private MenuItem newGameMenuItem;
 
     @FXML
     private GridPane chessBoard;
@@ -33,6 +41,15 @@ public class BoardController implements Initializable {
     @FXML
     private HBox capturedPiecesBlack;
 
+    @FXML
+    private VBox checkmateView;
+
+    @FXML
+    private Label playerWinsLabel;
+
+    @FXML
+    private Button newGameButton;
+
     private static final int BOARD_SIZE = 8;
     private static final double CELL_SIZE = 60.0;
 
@@ -42,8 +59,15 @@ public class BoardController implements Initializable {
     private ImageView selectedImageView;
     private ImageView draggedPieceImageView;
 
+    public void onNewGameAction() {
+        newGame();
+    }
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+        checkmateView.setVisible(false);
+        checkmateView.setManaged(false);
+
         chessRules = new ChessRules();
         drawBoard();
         updateBoard();
@@ -93,10 +117,11 @@ public class BoardController implements Initializable {
             clearSelection();
             return;
         }
-
         try {
+            System.out.println("Trying to move from " + sourcePosition + " to " + targetPosition);
             chessRules.performMove(sourcePosition, targetPosition);
             updateBoard();
+            if (chessRules.testCheckmate(chessRules.opponent(chessRules.getTurn()))) loadCheckmateView();
         } catch (Exception e) {
             System.out.println(e.getMessage());
         } finally {
@@ -352,5 +377,37 @@ public class BoardController implements Initializable {
         imageView.setPreserveRatio(true);
 
         return imageView;
+    }
+
+    private void loadCheckmateView() {
+        String winner = chessRules.getTurn() == chessMatch.Color.WHITE ? "Brancas vencem" : "Pretas vencem";
+        playerWinsLabel.setText(winner);
+
+        checkmateView.setManaged(true);
+        checkmateView.setVisible(true);
+
+        FadeTransition ft = new FadeTransition(Duration.millis(500), checkmateView);
+        ft.setFromValue(0.0);
+        ft.setToValue(1.0);
+        ft.play();
+
+        chessBoard.setDisable(true);
+    }
+
+    private void newGame() {
+        FadeTransition ft = new FadeTransition(Duration.millis(500), checkmateView);
+        ft.setFromValue(1.0);
+        ft.setToValue(0.0);
+        ft.setOnFinished(event -> {
+            checkmateView.setVisible(false);
+            checkmateView.setManaged(false);
+        });
+        ft.play();
+
+        chessRules = new ChessRules();
+        updateBoard();
+        clearSelection();
+
+        chessBoard.setDisable(false);
     }
 }

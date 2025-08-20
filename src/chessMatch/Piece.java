@@ -6,6 +6,7 @@ public abstract class Piece {
     protected Position position;
     protected Board board;
     private ChessRules chessRules;
+    protected int moveCount;
 
     public Piece(Color color, Board board, ChessRules chessRules) {
         this.chessRules = chessRules;
@@ -23,6 +24,14 @@ public abstract class Piece {
 
     public void setPosition(Position position) {
         this.position = position;
+    }
+
+    public void incrementMoveCount() {
+        moveCount++;
+    }
+
+    public void decrementMoveCount() {
+        moveCount--;
     }
 
     public Board getBoard() {
@@ -60,6 +69,16 @@ public abstract class Piece {
 
     public boolean possibleAttack(Position position) {
         return movesLogic()[position.getRow()][position.getColumn()];
+    }
+
+    public boolean isThereAnyPossibleMove() {
+        boolean[][] moves = possibleMoves();
+        for (int i = 0; i < moves.length; i++) {
+            for (int j = 0; j < moves[i].length; j++) {
+                if (moves[i][j]) return true;
+            }
+        }
+        return false;
     }
 
     public boolean isThereOpponentPiece(Position position) {

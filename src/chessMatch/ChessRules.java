@@ -1,10 +1,10 @@
 package chessMatch;
 
-import chessMatch.ChessPieces.King;
-import chessMatch.ChessPieces.Rook;
+import chessMatch.ChessPieces.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.spi.AbstractResourceBundleProvider;
 
 public class ChessRules {
 
@@ -12,6 +12,7 @@ public class ChessRules {
     private Color turn;
 
     private boolean check;
+    private boolean checkmate;
 
     private List<Piece> piecesOnTheBoard = new ArrayList<>();
     private List<Piece> capturedPieces = new ArrayList<>();
@@ -34,20 +35,27 @@ public class ChessRules {
         return capturedPieces;
     }
 
+    public boolean getCheckmate() {
+        return checkmate;
+    }
+
     public Piece performMove(Position source, Position target) {
         Position sourcePosition = validateSource(source);
         Position targetPosition = validateTarget(target, sourcePosition);
         Piece capturedPiece = makeMove(sourcePosition, targetPosition);
 
         if (testCheck(turn)){
-            //testCheckmate();
             check = false;
             undoMove(sourcePosition, targetPosition, capturedPiece);
             throw new ChessException("You can't put yourself in check");
         }
 
-
         if (testCheck(opponent(turn))){
+            if (testCheckmate(opponent(turn))){
+                checkmate = true;
+                System.out.println("Checkmate!");
+                return null;
+            }
             check = true;
             System.out.println("Check!");
         }
@@ -65,6 +73,7 @@ public class ChessRules {
             capturedPieces.add(capturedPiece);
         }
         board.placePiece(piece, targetPosition);
+        piece.incrementMoveCount();
         return capturedPiece;
     }
 
@@ -76,6 +85,7 @@ public class ChessRules {
             piecesOnTheBoard.add(capturedPiece);
         }
         board.placePiece(piece, sourcePosition);
+        piece.decrementMoveCount();
     }
 
     private Position validateSource(Position source) {
@@ -93,6 +103,30 @@ public class ChessRules {
         return piecesOnTheBoard.stream()
                 .filter(piece -> piece.getColor() == opponent(color))
                 .anyMatch(piece -> piece.possibleAttack(kingPosition));
+    }
+
+    public boolean testCheckmate(Color color) {
+        List<Piece> pieces = piecesOnTheBoard.stream()
+                .filter(piece -> piece.getColor() == color)
+                .toList();
+
+        for (Piece piece : pieces) {
+            boolean[][] possibleMoves = piece.movesLogic();
+
+            for (int i = 0; i < possibleMoves.length; i++) {
+                for (int j = 0; j < possibleMoves[i].length; j++) {
+                    if (possibleMoves[i][j]) {
+                        Position source = piece.getPosition();
+                        Position target = new Position(i, j);
+                        Piece capturedPiece = makeMove(source, target);
+                        boolean testCheck = testCheck(color);
+                        undoMove(source, target, capturedPiece);
+                        if (!testCheck) return false;
+                    }
+                }
+            }
+        }
+        return true;
     }
 
     private void changeTurn() {
@@ -117,12 +151,39 @@ public class ChessRules {
 
     public void initialSetup() {
         piecesOnTheBoard.addAll(List.of(
-            board.placeNewPiece(new Rook(Color.WHITE, board, this), new Position(7, 7)),
-            board.placeNewPiece(new Rook(Color.WHITE, board, this), new Position(7, 0)),
-            board.placeNewPiece(new Rook(Color.BLACK, board, this), new Position(0, 0)),
-            board.placeNewPiece(new Rook(Color.BLACK, board, this), new Position(0, 7)),
-            board.placeNewPiece(new King(Color.WHITE, board, this), new Position(7, 4)),
-            board.placeNewPiece(new King(Color.BLACK, board, this), new Position(0, 4))
+                board.placeNewPiece(new Rook(Color.WHITE, board, this), new Position(7, 0)),
+                board.placeNewPiece(new Knight(Color.WHITE, board, this), new Position(7, 1)),
+                board.placeNewPiece(new Bishop(Color.WHITE, board, this), new Position(7, 2)),
+                board.placeNewPiece(new Queen(Color.WHITE, board, this), new Position(7, 3)),
+                board.placeNewPiece(new King(Color.WHITE, board, this), new Position(7, 4)),
+                board.placeNewPiece(new Bishop(Color.WHITE, board, this), new Position(7, 5)),
+                board.placeNewPiece(new Knight(Color.WHITE, board, this), new Position(7, 6)),
+                board.placeNewPiece(new Rook(Color.WHITE, board, this), new Position(7, 7)),
+                board.placeNewPiece(new Pawn(Color.WHITE, board, this), new Position(6, 0)),
+                board.placeNewPiece(new Pawn(Color.WHITE, board, this), new Position(6, 1)),
+                board.placeNewPiece(new Pawn(Color.WHITE, board, this), new Position(6, 2)),
+                board.placeNewPiece(new Pawn(Color.WHITE, board, this), new Position(6, 3)),
+                board.placeNewPiece(new Pawn(Color.WHITE, board, this), new Position(6, 4)),
+                board.placeNewPiece(new Pawn(Color.WHITE, board, this), new Position(6, 5)),
+                board.placeNewPiece(new Pawn(Color.WHITE, board, this), new Position(6, 6)),
+                board.placeNewPiece(new Pawn(Color.WHITE, board, this), new Position(6, 7)),
+
+                board.placeNewPiece(new Rook(Color.BLACK, board, this), new Position(0, 0)),
+                board.placeNewPiece(new Knight(Color.BLACK, board, this), new Position(0, 1)),
+                board.placeNewPiece(new Bishop(Color.BLACK, board, this), new Position(0, 2)),
+                board.placeNewPiece(new Queen(Color.BLACK, board, this), new Position(0, 3)),
+                board.placeNewPiece(new King(Color.BLACK, board, this), new Position(0, 4)),
+                board.placeNewPiece(new Bishop(Color.BLACK, board, this), new Position(0, 5)),
+                board.placeNewPiece(new Knight(Color.BLACK, board, this), new Position(0, 6)),
+                board.placeNewPiece(new Rook(Color.BLACK, board, this), new Position(0, 7)),
+                board.placeNewPiece(new Pawn(Color.BLACK, board, this), new Position(1, 0)),
+                board.placeNewPiece(new Pawn(Color.BLACK, board, this), new Position(1, 1)),
+                board.placeNewPiece(new Pawn(Color.BLACK, board, this), new Position(1, 2)),
+                board.placeNewPiece(new Pawn(Color.BLACK, board, this), new Position(1, 3)),
+                board.placeNewPiece(new Pawn(Color.BLACK, board, this), new Position(1, 4)),
+                board.placeNewPiece(new Pawn(Color.BLACK, board, this), new Position(1, 5)),
+                board.placeNewPiece(new Pawn(Color.BLACK, board, this), new Position(1, 6)),
+                board.placeNewPiece(new Pawn(Color.BLACK, board, this), new Position(1, 7))
         ));
     }
 }

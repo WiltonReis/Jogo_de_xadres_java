@@ -29,3 +29,11 @@
 .selected-cell {
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 10, 0.7, 0, 0);
 }
+
+.checkmate-view {
+    -fx-background-color: #DEB887;
+        -fx-border-radius: 10px;
+    -fx-border-color: #808000;
+        -fx-border-width: 5px;
+        -fx-border-radius: 10px;
+}
