@@ -13,6 +13,7 @@ public class ChessRules {
     private boolean check;
     private boolean checkmate;
     private Piece enPassant;
+    private Piece promoted;
 
     private List<Piece> piecesOnTheBoard = new ArrayList<>();
     private List<Piece> capturedPieces = new ArrayList<>();
@@ -37,6 +38,10 @@ public class ChessRules {
 
     public Piece getEnPassant() {
         return enPassant;
+    }
+
+    public Piece getPromoted() {
+        return promoted;
     }
 
     public List<Piece> getCapturedPieces() {
@@ -70,12 +75,25 @@ public class ChessRules {
             System.out.println("Check!");
         }
 
-        //#specialmove en passant
-        if(movedPiece instanceof Pawn && targetPosition.getRow() == sourcePosition.getRow() - 2 || targetPosition.getRow() == sourcePosition.getRow() + 2) {
+        //#specialmove pawn
+        if(movedPiece instanceof Pawn) {
+
+            //#specialmove en passant
+            if(targetPosition.getRow() == sourcePosition.getRow() - 2 || targetPosition.getRow() == sourcePosition.getRow() + 2){
             enPassant = movedPiece;
             System.out.println(movedPiece);
+            } else enPassant = null;
+
+            //#specialmove promotion
+            if(targetPosition.getRow() == 0 || targetPosition.getRow() == 7){
+                promoted = movedPiece;
+                return capturedPiece;
+            } else promoted = null;
+        } else{
+            promoted = null;
+            enPassant = null;
         }
-        else enPassant = null;
+
 
         changeTurn();
         return capturedPiece;
@@ -160,6 +178,29 @@ public class ChessRules {
         }
 
 
+    }
+
+    public void replacePromotedPiece(String pieceType) {
+        if (promoted == null) throw new ChessException("There is no piece to be promoted");
+
+        Position position = promoted.getPosition();
+        Color color = promoted.getColor();
+
+        board.removePiece(position);
+        piecesOnTheBoard.remove(promoted);
+
+        Piece newPiece = switch (pieceType) {
+            case "Rook" -> new Rook(color, board, this);
+            case "Knight" -> new Knight(color, board, this);
+            case "Bishop" -> new Bishop(color, board, this);
+            default -> new Queen(color, board, this);
+        };
+
+        board.placePiece(newPiece, position);
+        piecesOnTheBoard.add(newPiece);
+
+        promoted = null;
+        changeTurn();
     }
 
     private Position validateSource(Position source) {

@@ -37,3 +37,19 @@
         -fx-border-width: 5px;
         -fx-border-radius: 10px;
 }
+
+.promoted-view{
+    -fx-background-color: #DEB887;
+    -fx-max-width: 210px;
+    -fx-max-height: 60px;
+}
+
+.promotion-pane-wr {
+    -fx-background-radius: 10 0 10 10;
+}
+
+.promotion-pane-wl { -fx-background-radius: 0 10 10 10; }
+
+.promotion-pane-br { -fx-background-radius: 10 10 0 10; }
+
+.promotion-pane-bl { -fx-background-radius: 10 10 10 0; }
