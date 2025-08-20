@@ -5,7 +5,7 @@ import chessMatch.*;
 public class King extends Piece {
 
     public King(Color color, Board board, ChessRules chessRules) {
-        super(color, board, chessRules);
+        super(color, board, chessRules, TypePiece.KING);
     }
 
     @Override
@@ -61,7 +61,7 @@ public class King extends Piece {
 
             // right castling
             rookPosition.setValues(position.getRow(), position.getColumn() + 3);
-            if (board.thereIsAPiece(rookPosition)){
+            if (board.positionExists(rookPosition) && board.thereIsAPiece(rookPosition)){
                 rook = board.piece(rookPosition);
                 if (rook instanceof Rook && ((Rook) rook).fitForCastling()) {
                     Position p1 = new Position(position.getRow(), position.getColumn() + 1);
@@ -74,7 +74,7 @@ public class King extends Piece {
 
             // left castling
             rookPosition.setValues(position.getRow(), position.getColumn() - 4);
-            if (board.thereIsAPiece(rookPosition)){
+            if (board.positionExists(rookPosition) && board.thereIsAPiece(rookPosition)){
                 rook = board.piece(rookPosition);
                 if (rook instanceof Rook && ((Rook) rook).fitForCastling()) {
                     Position p1 = new Position(position.getRow(), position.getColumn() - 1);

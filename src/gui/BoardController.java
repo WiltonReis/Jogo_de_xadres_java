@@ -6,6 +6,7 @@ import chessMatch.Position;
 
 import gui.themes.ThemesViewController;
 import javafx.animation.FadeTransition;
+import javafx.animation.PauseTransition;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -29,6 +30,7 @@ import javafx.util.Duration;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class BoardController implements Initializable {
 
@@ -154,7 +156,25 @@ public class BoardController implements Initializable {
         }
     }
 
-    private void tryPerformMove(Position targetPosition) {
+    private void playerMove(Position targetPosition) {
+        tryPerformMove(sourcePosition, targetPosition);
+    }
+
+    public void botMove() {
+        double delay = ThreadLocalRandom.current().nextDouble(0.5, 0.75);
+
+        PauseTransition pause = new PauseTransition(Duration.seconds(delay));
+        pause.setOnFinished(event -> {
+            chessRules.botMove();
+            if (chessRules.getPromoted() != null) chessRules.replacePromotedPiece("Queen");
+            updateBoard();
+            checkEndGame();
+        });
+
+        pause.play();
+    }
+
+    private void tryPerformMove(Position sourcePosition, Position targetPosition) {
         if (sourcePosition == null) {
             clearSelection();
             return;
@@ -163,22 +183,31 @@ public class BoardController implements Initializable {
             chessRules.performMove(sourcePosition, targetPosition);
             updateBoard();
             if (chessRules.getPromoted() != null) loadPromotedPieceView(chessRules.getPromoted());
-            if (chessRules.getCheckmate()){
-                String KingWinner = chessRules.getTurn() == chessMatch.Color.WHITE ? "whiteKing.png" : "blackKing.png";
-                Image kingWins = new Image("/gui/pieces/" + KingWinner);
-                ImageView imageView = new ImageView(kingWins);
-                imageView.setFitWidth(40);
-                imageView.setFitHeight(40);
-                playerWinsLabel.setGraphic(imageView);
-                loadEndGameView("Checkmate", chessRules.getTurn() == chessMatch.Color.WHITE ? "Brancas vencem" : "Pretas vencem");
-            }
-            if (chessRules.getStalemate()) loadEndGameView("Afogamento", "Empate");
-            if (chessRules.getDraw()) loadEndGameView("Material Insuficiente", "Empate");
+            checkEndGame();
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
             clearSelection();
         }
+
+        if (chessRules.getTurn() == chessRules.getBot().getBotColor()) {
+            botMove();
+        }
+    }
+
+    private void checkEndGame() {
+        if (chessRules.getCheckmate()){
+            System.out.println("Checkmate");
+            String KingWinner = chessRules.getTurn() != chessMatch.Color.WHITE ? "whiteKing.png" : "blackKing.png";
+            Image kingWins = new Image("/gui/pieces/" + KingWinner);
+            ImageView imageView = new ImageView(kingWins);
+            imageView.setFitWidth(40);
+            imageView.setFitHeight(40);
+            playerWinsLabel.setGraphic(imageView);
+            loadEndGameView("Checkmate", chessRules.getTurn() != chessMatch.Color.WHITE ? "Brancas vencem" : "Pretas vencem");
+        }
+        if (chessRules.getStalemate()) loadEndGameView("Afogamento", "Empate");
+        if (chessRules.getDraw()) loadEndGameView("Material Insuficiente", "Empate");
     }
 
     private void handlerCellClick(int row, int col) {
@@ -219,7 +248,7 @@ public class BoardController implements Initializable {
                 return;
             }
 
-            tryPerformMove(positonClicked);
+            playerMove(positonClicked);
         }
     }
 
@@ -292,7 +321,7 @@ public class BoardController implements Initializable {
             boolean success = false;
             if (db.hasString() && sourcePosition != null) {
                 Position targetPosition = new Position(finalRow, finalCol);
-                tryPerformMove(targetPosition);
+                playerMove(targetPosition);
             }
             event.setDropCompleted(success);
             event.consume();

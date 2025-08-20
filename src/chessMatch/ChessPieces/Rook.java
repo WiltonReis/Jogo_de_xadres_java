@@ -2,12 +2,10 @@ package chessMatch.ChessPieces;
 
 import chessMatch.*;
 
-import static chessMatch.Color.WHITE;
-
 public class Rook extends Piece {
 
     public Rook(Color color, Board board, ChessRules chessRules) {
-        super(color, board, chessRules);
+        super(color, board, chessRules, TypePiece.ROOK);
     }
 
     @Override

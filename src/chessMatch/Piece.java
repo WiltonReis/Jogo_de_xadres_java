@@ -1,14 +1,18 @@
 package chessMatch;
 
+import chessMatch.ChessPieces.TypePiece;
+
 public abstract class Piece {
 
     protected Color color;
+    protected TypePiece type;
     protected Position position;
     protected Board board;
     protected ChessRules chessRules;
     protected int moveCount;
 
-    public Piece(Color color, Board board, ChessRules chessRules) {
+    public Piece(Color color, Board board, ChessRules chessRules, TypePiece type) {
+        this.type = type;
         this.chessRules = chessRules;
         this.color = color;
         this.board = board;
@@ -18,8 +22,16 @@ public abstract class Piece {
         return color;
     }
 
+    public TypePiece getType() {
+        return type;
+    }
+
     public Position getPosition() {
         return position;
+    }
+
+    public int getMoveCount() {
+        return moveCount;
     }
 
     public void setPosition(Position position) {
