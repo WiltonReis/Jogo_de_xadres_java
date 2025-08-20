@@ -1,6 +1,7 @@
 package gui;
 
 import chessMatch.ChessRules;
+import chessMatch.Move;
 import chessMatch.Piece;
 import chessMatch.Position;
 
@@ -154,7 +155,18 @@ public class BoardController implements Initializable {
         }
     }
 
-    private void tryPerformMove(Position targetPosition) {
+    private void playerMove(Position targetPosition) {
+        tryPerformMove(sourcePosition, targetPosition);
+    }
+
+    public void botMove() {
+        Move move = chessRules.getBot().findBestMove();
+        Position sourcePosition = move.getSource();
+        Position targetPosition = move.getTarget();
+        tryPerformMove(sourcePosition, targetPosition);
+    }
+
+    private void tryPerformMove(Position sourcePosition, Position targetPosition) {
         if (sourcePosition == null) {
             clearSelection();
             return;
@@ -178,6 +190,11 @@ public class BoardController implements Initializable {
             e.printStackTrace();
         } finally {
             clearSelection();
+        }
+
+        if (chessRules.getTurn() == chessRules.getBot().getColor()) {
+            botMove();
+            updateBoard();
         }
     }
 
@@ -219,7 +236,7 @@ public class BoardController implements Initializable {
                 return;
             }
 
-            tryPerformMove(positonClicked);
+            playerMove(positonClicked);
         }
     }
 
@@ -292,7 +309,7 @@ public class BoardController implements Initializable {
             boolean success = false;
             if (db.hasString() && sourcePosition != null) {
                 Position targetPosition = new Position(finalRow, finalCol);
-                tryPerformMove(targetPosition);
+                playerMove(targetPosition);
             }
             event.setDropCompleted(success);
             event.consume();

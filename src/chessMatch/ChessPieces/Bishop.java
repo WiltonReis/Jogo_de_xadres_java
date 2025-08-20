@@ -5,7 +5,7 @@ import chessMatch.*;
 public class Bishop extends Piece {
 
     public Bishop(Color color, Board board, ChessRules chessRules) {
-        super(color, board, chessRules);
+        super(color, board, chessRules, TypePiece.BISHOP);
     }
 
     @Override

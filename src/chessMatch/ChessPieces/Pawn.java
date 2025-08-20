@@ -5,7 +5,7 @@ import chessMatch.*;
 public class Pawn extends Piece {
 
     public Pawn(Color color, Board board, ChessRules chessRules) {
-        super(color, board, chessRules);
+        super(color, board, chessRules, TypePiece.PAWN);
     }
 
 

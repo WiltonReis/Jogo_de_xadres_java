@@ -1,5 +1,6 @@
 package chessMatch;
 
+import bot.ChessBot;
 import chessMatch.ChessPieces.*;
 
 import java.util.ArrayList;
@@ -16,6 +17,7 @@ public class ChessRules {
     private boolean draw;
     private Piece enPassant;
     private Piece promoted;
+    private ChessBot bot;
 
     private List<Piece> piecesOnTheBoard = new ArrayList<>();
     private List<Piece> capturedPieces = new ArrayList<>();
@@ -24,6 +26,7 @@ public class ChessRules {
         board = new Board();
         turn = Color.WHITE;
         initialSetup();
+        bot = new ChessBot(Color.BLACK, this);
     }
 
     public Board getBoard() {
@@ -44,6 +47,14 @@ public class ChessRules {
 
     public Piece getPromoted() {
         return promoted;
+    }
+
+    public ChessBot getBot() {
+        return bot;
+    }
+
+    public List<Piece> getPiecesOnTheBoard() {
+        return piecesOnTheBoard;
     }
 
     public List<Piece> getCapturedPieces() {
@@ -115,7 +126,7 @@ public class ChessRules {
         return capturedPiece;
     }
 
-    protected Piece makeMove(Position sourcePosition, Position targetPosition) {
+    public Piece makeMove(Position sourcePosition, Position targetPosition) {
         Piece capturedPiece = null;
         Piece piece = board.removePiece(sourcePosition);
         if (board.thereIsAPiece(targetPosition)) capturedPiece = board.removePiece(targetPosition);
@@ -155,7 +166,7 @@ public class ChessRules {
         return capturedPiece;
     }
 
-    protected void undoMove(Position sourcePosition, Position targetPosition, Piece capturedPiece) {
+    public void undoMove(Position sourcePosition, Position targetPosition, Piece capturedPiece) {
         Piece piece = board.removePiece(targetPosition);
         board.placePiece(piece, sourcePosition);
         piece.decrementMoveCount();
@@ -295,6 +306,31 @@ public class ChessRules {
             }
         }
         return false;
+    }
+
+    public List<Move> possibleMoves(Color color) {
+        List<Piece> pieces = piecesOnTheBoard.stream().filter(piece -> piece.getColor() == color).toList();
+        List<Move> moves = new ArrayList<>();
+
+        Position sourcePosition = new Position(0, 0);
+        Position targetPosition = new Position(0, 0);
+        Piece capturedPiece = null;
+        boolean[][] legalMoves;
+
+        for (Piece piece : pieces) {
+            legalMoves = piece.movesLogic();
+
+            for (int i = 0; i < legalMoves.length; i++) {
+                for (int j = 0; j < legalMoves[i].length; j++) {
+                    if (legalMoves[i][j]) {
+                        sourcePosition.setValues(piece.getPosition().getRow(), piece.getPosition().getColumn());
+                        targetPosition.setValues(i, j);
+                        if (!testCheck(color)) moves.add(new Move(sourcePosition, targetPosition, piece));
+                    }
+                }
+            }
+        }
+        return moves;
     }
 
     private void changeTurn() {
