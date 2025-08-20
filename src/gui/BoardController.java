@@ -1,13 +1,15 @@
 package gui;
 
-import chessMatch.Board;
+import chessMatch.ChessRules;
 import chessMatch.Piece;
+import chessMatch.Position;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 
 import java.net.URL;
@@ -20,13 +22,24 @@ public class BoardController implements Initializable {
 
     private static final int BOARD_SIZE = 8;
     private static final double CELL_SIZE = 60.0;
-    private Board board;
+
+    private ChessRules chessRules;
+    private Position sourcePosition;
+    private StackPane selectedCellPane;
+    private Border originCellBorder;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        board = new Board();
+        chessRules = new ChessRules();
         drawBoard();
-        drawPieces();
+
+        StackPane tempPane = (StackPane) chessBoard.lookup("#cell-0-0");
+        if (tempPane != null) {
+            originCellBorder = tempPane.getBorder();
+        }
+
+        updateBoard();
+        onCellClick();
     }
 
     private void drawBoard() {
@@ -58,10 +71,102 @@ public class BoardController implements Initializable {
         }
     }
 
+    public void onCellClick() {
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                StackPane cellPane = (StackPane) chessBoard.lookup("#cell-" + row + "-" + col);
+                if (cellPane != null) {
+                        final int finalRow = row;
+                        final int finalCol = col;
+                        cellPane.setOnMouseClicked(event -> handlerCellClick(finalRow, finalCol));
+                }
+            }
+        }
+    }
+
+    private void handlerCellClick(int row, int col) {
+        Position positonClicked = new Position(row, col);
+        StackPane cellPane = (StackPane) chessBoard.lookup("#cell-" + row + "-" + col);
+
+        clearHighlightPossibleMoves();
+
+        if (sourcePosition == null) {
+            if (chessRules.getBoard().thereIsAPiece(positonClicked)) {
+                sourcePosition = positonClicked;
+                selectedCellPane = cellPane;
+
+                selectedCellPane.setBorder(new Border(new BorderStroke(Color.BLUE, BorderStrokeStyle.SOLID, null, new BorderWidths(3))));
+
+                highlightPossibleMoves(sourcePosition);
+            } else System.out.println("There is no piece in this position");
+        } else {
+            if (sourcePosition.equals(positonClicked)) {
+                clearSelection();
+                return;
+            }
+
+            try {
+                chessRules.performMove(sourcePosition, positonClicked);
+                updateBoard();
+                clearSelection();
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+                clearSelection();
+            }
+        }
+    }
+
+    private void clearSelection() {
+        if (selectedCellPane != null) {
+            selectedCellPane.setBorder(originCellBorder);
+            selectedCellPane = null;
+        }
+        sourcePosition = null;
+        clearHighlightPossibleMoves();
+    }
+
+    private void highlightPossibleMoves(Position sourcePosition) {
+        boolean[][] possibleMoves = chessRules.getBoard().piece(sourcePosition).possibleMoves();
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (possibleMoves[row][col]) {
+                    StackPane targetCellPane = (StackPane) chessBoard.lookup("#cell-" + row + "-" + col);
+                    if (targetCellPane != null) {
+                        Circle circle = new Circle();
+                        circle.setRadius(CELL_SIZE * 0.15);
+                        circle.setFill(Color.web("#333333", 0.4));
+                        targetCellPane.getChildren().add(circle);
+                    }
+                }
+            }
+        }
+    }
+
+    private void clearHighlightPossibleMoves() {
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                StackPane targetCellPane = (StackPane) chessBoard.lookup("#cell-" + row + "-" + col);
+                if (targetCellPane != null) {
+                    targetCellPane.getChildren().removeIf(node -> node instanceof Circle);
+                }
+            }
+        }
+    }
+
+    private void updateBoard() {
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                StackPane cellPane = (StackPane) chessBoard.lookup("#cell-" + row + "-" + col);
+                cellPane.getChildren().removeIf(node -> !(node instanceof Rectangle));
+            }
+        }
+        drawPieces();
+    }
+
     private void drawPieces() {
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
-                Piece piece = board.piece(row, col);
+                Piece piece = chessRules.getBoard().piece(row, col);
                 if (piece != null) {
                     try {
                         String pieceImage = piece.toString() + ".png";
