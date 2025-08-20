@@ -1,7 +1,11 @@
 package gui;
 
+import chessMatch.Board;
+import chessMatch.Piece;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
@@ -16,10 +20,13 @@ public class BoardController implements Initializable {
 
     private static final int BOARD_SIZE = 8;
     private static final double CELL_SIZE = 60.0;
+    private Board board;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+        board = new Board();
         drawBoard();
+        drawPieces();
     }
 
     private void drawBoard() {
@@ -43,11 +50,44 @@ public class BoardController implements Initializable {
                 else cell.setFill(darkColor);
 
                 StackPane stackPane = new StackPane(cell);
-
+                stackPane.setId("cell-" + row + "-" + col);
                 stackPane.setBorder(cellBorder);
 
                 chessBoard.add(stackPane, col, row);
             }
+        }
+    }
+
+    private void drawPieces() {
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                Piece piece = board.piece(row, col);
+                if (piece != null) {
+                    try {
+                        String pieceImage = piece.toString() + ".png";
+                        String imagePath = "/gui/pieces/" + pieceImage;
+
+                        Image image = new Image(getClass().getResourceAsStream(imagePath));
+                        ImageView imageView = new ImageView(image);
+
+                        imageView.setFitWidth(CELL_SIZE * 0.9);
+                        imageView.setFitHeight(CELL_SIZE * 0.9);
+                        imageView.setPreserveRatio(true);
+
+                        StackPane targetPane = (StackPane) chessBoard.lookup("#cell-" + row + "-" + col);
+
+                        if(targetPane != null) {
+                            targetPane.getChildren().add(imageView);
+                        } else {
+                            System.err.println("Cell not found");
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+
+            }
+
         }
     }
 }

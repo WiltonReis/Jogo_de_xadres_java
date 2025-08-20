@@ -1,4 +1,6 @@
 package chessMatch;
 
-public class ChessMatch {
+public class ChessRules {
+
+    private Board board;
 }
