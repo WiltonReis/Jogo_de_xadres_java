@@ -1,5 +1,6 @@
 package chessMatch;
 
+import chessMatch.ChessPieces.King;
 import chessMatch.ChessPieces.Rook;
 
 public class Board {
@@ -8,7 +9,6 @@ public class Board {
 
     public Board() {
         pieces = new Piece[8][8];
-        initialSetup();
     }
 
     public Piece piece(int row, int column) {
@@ -24,9 +24,17 @@ public class Board {
         piece.setPosition(position);
     }
 
+    public Piece placeNewPiece(Piece piece, Position position) {
+        if (thereIsAPiece(position)) throw new ChessException("There is already a piece on this position");
+        placePiece(piece, position);
+        return piece;
+    }
+
     public Piece removePiece(Position position) {
+        if (!positionExists(position)) throw new ChessException("Position not on the board");
+        if (piece(position) == null) throw new ChessException("There is no piece on this position");
         Piece aux = piece(position);
-        aux.position = null;
+        aux.setPosition(null);
         pieces[position.getRow()][position.getColumn()] = null;
         return aux;
     }
@@ -37,12 +45,5 @@ public class Board {
 
     public boolean thereIsAPiece(Position position) {
         return piece(position) != null;
-    }
-
-    public void initialSetup() {
-        placePiece(new Rook(Color.WHITE, this), new Position(7, 7));
-        placePiece(new Rook(Color.WHITE, this), new Position(7, 0));
-        placePiece(new Rook(Color.BLACK, this), new Position(0, 0));
-        placePiece(new Rook(Color.BLACK, this), new Position(0, 7));
     }
 }

@@ -1,4 +1,31 @@
 .root {
     -fx-background-color: #333333;
-    }
+}
 
+#chessBoard {
+    -fx-background-color: #4a4a4a;
+    -fx-border-color: #222222;
+    -fx-border-width: 2px;
+}
+
+.captured-pieces-area {
+    -fx-background-color: #808080 ;
+    -fx-padding: 10px 15px;
+    -fx-spacing: 5px;
+    -fx-alignment: CENTER;
+    -fx-border-color: #F5F5DC;
+    -fx-border-width: 1.5px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.7), 10, 0.5, 0, 0);
+}
+
+.chess-cell {
+    -fx-border-color: #666666;
+    -fx-border-width: 1px;
+    -fx-border-style: solid;
+}
+
+.selected-cell {
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 10, 0.7, 0, 0);
+}

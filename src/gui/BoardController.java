@@ -3,6 +3,7 @@ package gui;
 import chessMatch.ChessRules;
 import chessMatch.Piece;
 import chessMatch.Position;
+
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
@@ -26,25 +27,25 @@ public class BoardController implements Initializable {
     @FXML
     private GridPane chessBoard;
 
+    @FXML
+    private HBox capturedPiecesWhite;
+
+    @FXML
+    private HBox capturedPiecesBlack;
+
     private static final int BOARD_SIZE = 8;
     private static final double CELL_SIZE = 60.0;
 
     private ChessRules chessRules;
     private Position sourcePosition;
     private StackPane selectedCellPane;
-    private Border originCellBorder;
+    private ImageView selectedImageView;
     private ImageView draggedPieceImageView;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         chessRules = new ChessRules();
         drawBoard();
-
-        StackPane tempPane = (StackPane) chessBoard.lookup("#cell-0-0");
-        if (tempPane != null) {
-            originCellBorder = tempPane.getBorder();
-        }
-
         updateBoard();
         onCellClick();
     }
@@ -54,12 +55,6 @@ public class BoardController implements Initializable {
         Color lightColor = Color.web("#D4E1C6");
         Color darkColor = Color.web("#8BB0BF");
 
-        Border cellBorder = new Border(new BorderStroke(
-                Color.BLACK,
-                BorderStrokeStyle.SOLID,
-                null,
-                new BorderWidths(1.5)
-        ));
 
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
@@ -71,7 +66,7 @@ public class BoardController implements Initializable {
 
                 StackPane stackPane = new StackPane(cell);
                 stackPane.setId("cell-" + row + "-" + col);
-                stackPane.setBorder(cellBorder);
+                stackPane.getStyleClass().add("chess-cell");
 
                 chessBoard.add(stackPane, col, row);
             }
@@ -120,7 +115,10 @@ public class BoardController implements Initializable {
                 sourcePosition = positonClicked;
                 selectedCellPane = cellPane;
 
-                selectedCellPane.setBorder(new Border(new BorderStroke(Color.BLUE, BorderStrokeStyle.SOLID, null, new BorderWidths(2))));
+                selectedImageView = findImageViewInCell(cellPane);
+                if (selectedImageView != null) {
+                    selectedImageView.getStyleClass().add("selected-cell");
+                }
 
                 highlightPossibleMoves(sourcePosition);
             } else System.out.println("There is no piece in this position");
@@ -135,7 +133,10 @@ public class BoardController implements Initializable {
                 sourcePosition = positonClicked;
                 selectedCellPane = cellPane;
 
-                selectedCellPane.setBorder(new Border(new BorderStroke(Color.BLUE, BorderStrokeStyle.SOLID, null, new BorderWidths(2))));
+                selectedImageView = findImageViewInCell(cellPane);
+                if (selectedImageView != null) {
+                    selectedImageView.getStyleClass().add("selected-cell");
+                }
 
                 highlightPossibleMoves(sourcePosition);
                 return;
@@ -144,7 +145,6 @@ public class BoardController implements Initializable {
             tryPerformMove(positonClicked);
         }
     }
-
 
     private void dragAndDrop(StackPane cellPane, int finalRow, int finalCol) {
         cellPane.setOnDragDetected(event -> {
@@ -186,7 +186,6 @@ public class BoardController implements Initializable {
 
                     highlightPossibleMoves(sourcePosition);
 
-                    selectedCellPane.setBorder(new Border(new BorderStroke(Color.ORANGE, BorderStrokeStyle.SOLID, null, new BorderWidths(2))));
                 } else {
                     clearSelection();
                 }
@@ -234,11 +233,21 @@ public class BoardController implements Initializable {
         });
     }
 
-    private void clearSelection() {
-        if (selectedCellPane != null) {
-            selectedCellPane.setBorder(originCellBorder);
-            selectedCellPane = null;
+    private ImageView findImageViewInCell(StackPane cellPane) {
+        for (Node node : cellPane.getChildren()) {
+            if (node instanceof ImageView) {
+                return (ImageView) node;
+            }
         }
+        return null;
+    }
+
+    private void clearSelection() {
+        if (selectedImageView != null) {
+            selectedImageView.getStyleClass().remove("selected-cell");
+            selectedImageView = null;
+        }
+        selectedCellPane = null;
         sourcePosition = null;
         clearHighlightPossibleMoves();
     }
@@ -279,6 +288,7 @@ public class BoardController implements Initializable {
             }
         }
         drawPieces();
+        updateCapturedPieces();
     }
 
     private void drawPieces() {
@@ -287,21 +297,15 @@ public class BoardController implements Initializable {
                 Piece piece = chessRules.getBoard().piece(row, col);
                 if (piece != null) {
                     try {
-                        String pieceImage = piece.toString() + ".png";
-                        String imagePath = "/gui/pieces/" + pieceImage;
 
-                        Image image = new Image(getClass().getResourceAsStream(imagePath));
-                        ImageView imageView = new ImageView(image);
+                        ImageView imageView = createImageViewForPiece(piece);
 
                         imageView.setFitWidth(CELL_SIZE * 0.9);
                         imageView.setFitHeight(CELL_SIZE * 0.9);
-                        imageView.setPreserveRatio(true);
 
                         StackPane targetPane = (StackPane) chessBoard.lookup("#cell-" + row + "-" + col);
 
                         if(targetPane != null) {
-                            // Certifique-se de que a ImageView é o único ImageView no StackPane
-                            // para facilitar a recuperação depois
                             targetPane.getChildren().add(imageView);
                         } else {
                             System.err.println("Cell not found");
@@ -312,5 +316,41 @@ public class BoardController implements Initializable {
                 }
             }
         }
+    }
+
+    private void updateCapturedPieces() {
+        capturedPiecesWhite.getChildren().clear();
+        capturedPiecesBlack.getChildren().clear();
+
+        for (Piece piece : chessRules.getCapturedPieces()){
+            try {
+                ImageView imageView = createImageViewForPiece(piece);
+                imageView.setFitWidth(30);
+                imageView.setFitHeight(30);
+
+                if (piece.getColor() == chessMatch.Color.WHITE) {
+                    capturedPiecesWhite.getChildren().add(imageView);
+                } else {
+                    capturedPiecesBlack.getChildren().add(imageView);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
+
+    private ImageView createImageViewForPiece(Piece piece) throws Exception {
+        String pieceImage = piece.toString() + ".png";
+        String imagePath = "/gui/pieces/" + pieceImage;
+
+        Image image = new Image(getClass().getResourceAsStream(imagePath));
+        ImageView imageView = new ImageView(image);
+
+        imageView.setFitWidth(CELL_SIZE * 0.9);
+        imageView.setFitHeight(CELL_SIZE * 0.9);
+        imageView.setPreserveRatio(true);
+
+        return imageView;
     }
 }
