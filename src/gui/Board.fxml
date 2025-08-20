@@ -61,7 +61,7 @@
                         <RowConstraints minHeight="10.0" prefHeight="60.0" vgrow="SOMETIMES" />
                      </rowConstraints>
                   </GridPane>
-                  <VBox fx:id="endGameView" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="168.0" prefWidth="330.0" styleClass="checkmate-view">
+                  <VBox fx:id="endGameView" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="168.0" prefWidth="330.0">
                      <children>
                         <Label fx:id="titleLabel" alignment="CENTER" prefHeight="50.0" prefWidth="517.0">
                            <VBox.margin>

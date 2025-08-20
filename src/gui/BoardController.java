@@ -11,11 +11,9 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
-import javafx.scene.Scene;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
@@ -26,8 +24,6 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
 import javafx.util.Duration;
 
 import java.io.IOException;
@@ -88,26 +84,23 @@ public class BoardController implements Initializable {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        setBoardTheme("blue");
+        setBoardTheme("wood");
         updateBoard();
         onCellClick();
     }
 
     private void drawBoard() {
-        double borderWidth = 1.5; // largura da borda
+        double borderWidth = 1.5;
 
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
 
-                // Cria o retângulo da célula
                 Rectangle cell = new Rectangle(CELL_SIZE, CELL_SIZE);
                 cell.getStyleClass().add((row + col) % 2 == 0 ? "light-cell" : "dark-cell");
 
-                // Define a borda diretamente no retângulo
-                cell.setStroke(Color.BLACK);   // cor da borda
+                cell.setStroke(Color.BLACK);
                 cell.setStrokeWidth(borderWidth);
 
-                // Coloca o retângulo dentro do StackPane
                 StackPane stackPane = new StackPane(cell);
                 stackPane.setId("cell-" + row + "-" + col);
 
@@ -170,7 +163,15 @@ public class BoardController implements Initializable {
             chessRules.performMove(sourcePosition, targetPosition);
             updateBoard();
             if (chessRules.getPromoted() != null) loadPromotedPieceView(chessRules.getPromoted());
-            if (chessRules.getCheckmate()) loadEndGameView("Checkmate", chessRules.getTurn() == chessMatch.Color.WHITE ? "Brancas vencem" : "Pretas vencem");
+            if (chessRules.getCheckmate()){
+                String KingWinner = chessRules.getTurn() == chessMatch.Color.WHITE ? "whiteKing.png" : "blackKing.png";
+                Image kingWins = new Image("/gui/pieces/" + KingWinner);
+                ImageView imageView = new ImageView(kingWins);
+                imageView.setFitWidth(40);
+                imageView.setFitHeight(40);
+                playerWinsLabel.setGraphic(imageView);
+                loadEndGameView("Checkmate", chessRules.getTurn() == chessMatch.Color.WHITE ? "Brancas vencem" : "Pretas vencem");
+            }
             if (chessRules.getStalemate()) loadEndGameView("Afogamento", "Empate");
             if (chessRules.getDraw()) loadEndGameView("Material Insuficiente", "Empate");
         } catch (Exception e) {
