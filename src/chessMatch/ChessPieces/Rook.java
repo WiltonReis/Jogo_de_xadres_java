@@ -59,6 +59,10 @@ public class Rook extends Piece {
         return moves;
     }
 
+    public boolean fitForCastling() {
+        return moveCount == 0;
+    }
+
     @Override
     public String toString() {
         return Color.WHITE == color ? "whiteRook" : "blackRook";
