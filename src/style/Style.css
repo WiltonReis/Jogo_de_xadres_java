@@ -2,28 +2,66 @@
     -fx-background-color: #333333;
 }
 
+.grid-pane {
+    -fx-border-color: #000000;
+    -fx-border-width: 10px;
+}
+
 #chessBoard {
     -fx-background-color: #4a4a4a;
     -fx-border-color: #222222;
     -fx-border-width: 2px;
 }
 
+.button-bar {
+    -fx-background-color: #3D3D3D;
+}
+
+.button-bar .button {
+    -fx-background-color: #3D3D3D;
+    -fx-padding: 0px;
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
+}
+
+.button-bar .button:hover {
+    -fx-background-color: #4a4a4a;
+}
+
 .captured-pieces-area {
-    -fx-background-color: #808080 ;
-    -fx-padding: 10px 15px;
+    -fx-background-color: #392613;
     -fx-spacing: 5px;
     -fx-alignment: CENTER;
-    -fx-border-color: #F5F5DC;
+    -fx-border-color: #000000;
     -fx-border-width: 1.5px;
-    -fx-border-radius: 8px;
-    -fx-background-radius: 8px;
     -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.7), 10, 0.5, 0, 0);
 }
 
-.chess-cell {
-    -fx-border-color: #666666;
-    -fx-border-width: 1px;
-    -fx-border-style: solid;
+.captured-pieces-scrollpane {
+    -fx-background-color: transparent;
+}
+
+.captured-pieces-scrollpane .scroll-bar {
+    -fx-background-color: transparent;
+    -fx-padding : 0px;
+}
+
+.captured-pieces-scrollpane .scroll-bar .thumb {
+    -fx-background-color: #808080;
+        -fx-background-radius: 100;
+        -fx-pref-width: 10px;
+        -fx-pref-height: 10px;
+}
+
+.captured-pieces-scrollpane .scroll-bar:horizontal .increment-button,
+.captured-pieces-scrollpane .scroll-bar:horizontal .decrement-button {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+.captured-pieces-scrollpane .scroll-bar:horizontal .track {
+    -fx-background-color: transparent;
 }
 
 .selected-cell {
@@ -53,3 +91,15 @@
 .promotion-pane-br { -fx-background-radius: 10 10 0 10; }
 
 .promotion-pane-bl { -fx-background-radius: 10 10 10 0; }
+
+.theme-pink .light-cell { -fx-fill: #F8DEE7; }
+.theme-pink .dark-cell { -fx-fill: #F06292; }
+
+.theme-blue .light-cell { -fx-fill: #D4E1C6; }
+.theme-blue .dark-cell { -fx-fill: #8BB0BF; }
+
+.theme-wood .light-cell { -fx-fill: #F0D9B5; }
+.theme-wood .dark-cell { -fx-fill: #B58863; }
+
+.theme-dark .light-cell { -fx-fill: #7A7A7A; }
+.theme-dark .dark-cell { -fx-fill: #4A4A4A; }

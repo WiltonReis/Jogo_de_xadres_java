@@ -1,0 +1,36 @@
+/* Styles para o painel principal do ThemesView */
+.root {
+    -fx-background-color: #F5F5DC; /* Creme suave */
+    -fx-border-color: #4C774C;     /* Verde escuro */
+    -fx-border-width: 2px;
+    -fx-border-radius: 10px;
+    -fx-background-radius: 10px;
+    -fx-padding: 10px;             /* Espaço interno */
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 10, 0.5, 0, 0);
+}
+
+/* GridPane que contém os botões de tema */
+.grid-pane {
+    -fx-hgap: 10px;  /* Espaçamento horizontal entre botões */
+    -fx-vgap: 10px;  /* Espaçamento vertical entre botões */
+}
+
+.close-button {
+    -fx-background-color: red;      /* fundo vermelho */
+    -fx-text-fill: white;           /* X branco */
+    -fx-font-weight: bold;          /* X grosso */
+    -fx-font-size: 12px;            /* tamanho do X */
+    -fx-border-color: black;        /* borda preta */
+    -fx-border-width: 1px;
+    -fx-border-radius: 0;           /* quadrado */
+    -fx-background-radius: 0;       /* quadrado */
+    -fx-cursor: hand;               /* cursor de mão */
+    -fx-padding: 0;                 /* remove espaçamento interno */
+    -fx-alignment: center;          /* centraliza o X */
+    -fx-min-width: 18px;            /* tamanho fixo */
+    -fx-min-height: 18px;
+}
+
+.close-button:hover {
+    -fx-background-color: darkred;  /* mais escuro no hover */
+}

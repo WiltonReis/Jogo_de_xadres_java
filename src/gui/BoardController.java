@@ -4,11 +4,14 @@ import chessMatch.ChessRules;
 import chessMatch.Piece;
 import chessMatch.Position;
 
+import gui.themes.ThemesViewController;
 import javafx.animation.FadeTransition;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -23,8 +26,11 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import javafx.util.Duration;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
@@ -34,10 +40,10 @@ public class BoardController implements Initializable {
     private StackPane mainPane;
 
     @FXML
-    private MenuItem newGameMenuItem;
+    private GridPane chessBoard;
 
     @FXML
-    private GridPane chessBoard;
+    private Pane themesPane;
 
     @FXML
     private HBox capturedPiecesWhite;
@@ -77,31 +83,67 @@ public class BoardController implements Initializable {
 
         chessRules = new ChessRules();
         drawBoard();
+        try {
+            createThemesMenu();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        setBoardTheme("blue");
         updateBoard();
         onCellClick();
     }
 
     private void drawBoard() {
-
-        Color lightColor = Color.web("#D4E1C6");
-        Color darkColor = Color.web("#8BB0BF");
-
+        double borderWidth = 1.5; // largura da borda
 
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
 
+                // Cria o retângulo da célula
                 Rectangle cell = new Rectangle(CELL_SIZE, CELL_SIZE);
+                cell.getStyleClass().add((row + col) % 2 == 0 ? "light-cell" : "dark-cell");
 
-                if ((row + col) % 2 == 0)  cell.setFill(lightColor);
-                else cell.setFill(darkColor);
+                // Define a borda diretamente no retângulo
+                cell.setStroke(Color.BLACK);   // cor da borda
+                cell.setStrokeWidth(borderWidth);
 
+                // Coloca o retângulo dentro do StackPane
                 StackPane stackPane = new StackPane(cell);
                 stackPane.setId("cell-" + row + "-" + col);
-                stackPane.getStyleClass().add("chess-cell");
 
                 chessBoard.add(stackPane, col, row);
             }
         }
+    }
+
+    public void setBoardTheme(String theme) {
+        chessBoard.getStyleClass().removeIf(s -> s.startsWith("theme-"));
+        chessBoard.getStyleClass().add("theme-" + theme);
+    }
+
+    public void openThemeMenu() throws IOException {
+        themesPane.setVisible(true);
+        themesPane.setManaged(true);
+        chessBoard.setDisable(true);
+    }
+
+    public void closeThemeMenu() {
+        themesPane.setVisible(false);
+        themesPane.setManaged(false);
+        chessBoard.setDisable(false);
+    }
+
+    private void createThemesMenu() throws IOException {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/themes/ThemesView.fxml"));
+        themesPane = loader.load();
+
+        ThemesViewController themesController = loader.getController();
+        themesController.setBoardController(this);
+
+        themesPane.setVisible(false);
+        themesPane.setManaged(false);
+
+        mainPane.getChildren().add(themesPane);
     }
 
     public void onCellClick() {
@@ -128,9 +170,9 @@ public class BoardController implements Initializable {
             chessRules.performMove(sourcePosition, targetPosition);
             updateBoard();
             if (chessRules.getPromoted() != null) loadPromotedPieceView(chessRules.getPromoted());
-            if (chessRules.getCheckmate()) loadCheckmateView();
-            if (chessRules.getStalemate()) loadStalemateView();
-            if (chessRules.getDraw()) loadDrawView();
+            if (chessRules.getCheckmate()) loadEndGameView("Checkmate", chessRules.getTurn() == chessMatch.Color.WHITE ? "Brancas vencem" : "Pretas vencem");
+            if (chessRules.getStalemate()) loadEndGameView("Afogamento", "Empate");
+            if (chessRules.getDraw()) loadEndGameView("Material Insuficiente", "Empate");
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -447,40 +489,9 @@ public class BoardController implements Initializable {
         return imageView;
     }
 
-    private void loadCheckmateView() {
-        titleLabel.setText("Checkmate");
-        String winner = chessRules.getTurn() == chessMatch.Color.WHITE ? "Brancas vencem" : "Pretas vencem";
-        playerWinsLabel.setText(winner);
-
-        endGameView.setManaged(true);
-        endGameView.setVisible(true);
-
-        FadeTransition ft = new FadeTransition(Duration.millis(500), endGameView);
-        ft.setFromValue(0.0);
-        ft.setToValue(1.0);
-        ft.play();
-
-        chessBoard.setDisable(true);
-    }
-
-    private void loadStalemateView() {
-        titleLabel.setText("Stalemate");
-        playerWinsLabel.setText("Draw");
-
-        endGameView.setManaged(true);
-        endGameView.setVisible(true);
-
-        FadeTransition ft = new FadeTransition(Duration.millis(500), endGameView);
-        ft.setFromValue(0.0);
-        ft.setToValue(1.0);
-        ft.play();
-
-        chessBoard.setDisable(true);
-    }
-
-    private void loadDrawView() {
-        titleLabel.setText("Insufficient material");
-        playerWinsLabel.setText("Draw");
+    private void loadEndGameView(String message, String playerWins) {
+        titleLabel.setText(message);
+        playerWinsLabel.setText(playerWins);
 
         endGameView.setManaged(true);
         endGameView.setVisible(true);
