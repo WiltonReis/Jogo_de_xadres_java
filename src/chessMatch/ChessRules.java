@@ -312,20 +312,18 @@ public class ChessRules {
         List<Piece> pieces = piecesOnTheBoard.stream().filter(piece -> piece.getColor() == color).toList();
         List<Move> moves = new ArrayList<>();
 
-        Position sourcePosition = new Position(0, 0);
-        Position targetPosition = new Position(0, 0);
         Piece capturedPiece = null;
         boolean[][] legalMoves;
 
         for (Piece piece : pieces) {
-            legalMoves = piece.movesLogic();
+            legalMoves = legalMovement(piece.getPosition());
 
             for (int i = 0; i < legalMoves.length; i++) {
                 for (int j = 0; j < legalMoves[i].length; j++) {
                     if (legalMoves[i][j]) {
-                        sourcePosition.setValues(piece.getPosition().getRow(), piece.getPosition().getColumn());
-                        targetPosition.setValues(i, j);
-                        if (!testCheck(color)) moves.add(new Move(sourcePosition, targetPosition, piece));
+                        Position sourcePosition = new Position(piece.getPosition().getRow(), piece.getPosition().getColumn());
+                        Position targetPosition = new Position(i, j);
+                        moves.add(new Move(sourcePosition, targetPosition, piece));
                     }
                 }
             }

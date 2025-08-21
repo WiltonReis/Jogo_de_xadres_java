@@ -30,6 +30,10 @@ public abstract class Piece {
         return position;
     }
 
+    public int getMoveCount() {
+        return moveCount;
+    }
+
     public void setPosition(Position position) {
         this.position = position;
     }

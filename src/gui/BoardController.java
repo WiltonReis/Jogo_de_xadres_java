@@ -7,6 +7,7 @@ import chessMatch.Position;
 
 import gui.themes.ThemesViewController;
 import javafx.animation.FadeTransition;
+import javafx.animation.PauseTransition;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -30,6 +31,7 @@ import javafx.util.Duration;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class BoardController implements Initializable {
 
@@ -193,8 +195,14 @@ public class BoardController implements Initializable {
         }
 
         if (chessRules.getTurn() == chessRules.getBot().getColor()) {
-            botMove();
-            updateBoard();
+            double delay = ThreadLocalRandom.current().nextDouble(0.75, 1);
+
+            PauseTransition pause = new PauseTransition(Duration.seconds(delay));
+            pause.setOnFinished(event -> {
+                botMove();
+                updateBoard();
+            });
+            pause.play();
         }
     }
 
