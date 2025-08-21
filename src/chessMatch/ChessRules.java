@@ -331,6 +331,35 @@ public class ChessRules {
         return moves;
     }
 
+    public List<Position> possibleAttacks(Piece piece) {
+        List<Position> attacksPosition = new ArrayList<>();
+
+        if (piece instanceof Pawn) {
+            if (piece.getColor() == Color.WHITE) {
+                attacksPosition.add(new Position(piece.getPosition().getRow() - 1, piece.getPosition().getColumn() - 1));
+                attacksPosition.add(new Position(piece.getPosition().getRow() - 1, piece.getPosition().getColumn() + 1));
+            } else {
+                attacksPosition.add(new Position(piece.getPosition().getRow() + 1, piece.getPosition().getColumn() - 1));
+                attacksPosition.add(new Position(piece.getPosition().getRow() + 1, piece.getPosition().getColumn() + 1));
+            }
+        } else {
+            boolean[][] legalMoves = legalMovement(piece.getPosition());
+            for (int i = 0; i < legalMoves.length; i++) {
+                for (int j = 0; j < legalMoves[i].length; j++) {
+                    if (legalMoves[i][j]) attacksPosition.add(new Position(i, j));
+                }
+            }
+        }
+
+        return attacksPosition;
+    }
+
+    public boolean thereIsAOpponentPiece(Position position) {
+        return piecesOnTheBoard.stream()
+                .filter(piece -> piece.getColor() == opponent(turn))
+                .anyMatch(piece -> piece.getPosition().equals(position));
+    }
+
     private void changeTurn() {
         turn = opponent(turn);
     }
