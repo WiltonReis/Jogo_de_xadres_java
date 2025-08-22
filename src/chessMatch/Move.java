@@ -5,6 +5,7 @@ public class Move {
     private Position source;
     private Position target;
     private Piece pieceMoved;
+    private int score;
 
     public Move(Position source, Position target, Piece pieceMoved) {
         this.source = source;
@@ -22,5 +23,13 @@ public class Move {
 
     public Piece getPieceMoved() {
         return pieceMoved;
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public void setScore(int score) {
+        this.score = score;
     }
 }

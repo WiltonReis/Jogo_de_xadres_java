@@ -1,12 +1,11 @@
 package bot;
 
 import chessMatch.*;
+import chessMatch.ChessPieces.King;
 import chessMatch.ChessPieces.Knight;
 import chessMatch.ChessPieces.Pawn;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 public class ChessBot {
 
@@ -26,40 +25,33 @@ public class ChessBot {
     public Move findBestMove() {
         List<Move> possibleMoves = chessRules.possibleMoves(color);
 
-        List<Integer> scores = new ArrayList<>();
+        if (possibleMoves.size() == 1) return possibleMoves.get(0);
+
+        List<Move> scoredMoves = new ArrayList<>();
 
         for (Move move : possibleMoves) {
 
             Piece capturedPiece = chessRules.makeMove(move.getSource(), move.getTarget());
 
-            int score = scoreBase() + movedScore(move) + (possibleMoves.size() * 2);
-            scores.add(score);
+            move.setScore(scoreBase() + movedScore(move));
+            scoredMoves.add(move);
 
             chessRules.undoMove(move.getSource(), move.getTarget(), capturedPiece);
 
         }
 
-        int totalScore = scores.stream().mapToInt(Integer::intValue).sum();
-        List<Double> probabilities = new ArrayList<>();
+        scoredMoves.sort((a, b) -> Integer.compare(b.getScore(), a.getScore()));
 
-        for (int score : scores) {
-            probabilities.add((double) score / totalScore);
+        int topMoves = 3;
+        if (scoredMoves.size() < topMoves) topMoves = scoredMoves.size();
+
+        List<Move> bestMoves = new ArrayList<>();
+        for (int i = 0; i < topMoves; i++) {
+            bestMoves.add(scoredMoves.get(i));
         }
 
-        Double random = Math.random();
-        Double cumulativeProbability = 0.0;
-        Move chosenMove = possibleMoves.get(0);
-
-        for(int i = 0; i < probabilities.size(); i++) {
-            cumulativeProbability += probabilities.get(i);
-            if (random <= cumulativeProbability) {
-                chosenMove = possibleMoves.get(i);
-                break;
-
-            }
-        }
-
-        return chosenMove;
+        Random random = new Random();
+        return bestMoves.get(random.nextInt(bestMoves.size()));
     }
 
     private int scoreBase() {
@@ -79,10 +71,20 @@ public class ChessBot {
         int score = 0;
 
         Piece movedPiece = move.getPieceMoved();
-        List<Position> possibleAttacks = chessRules.possibleAttacks(movedPiece);
+
+        Piece enemyKing = chessRules.getPiecesOnTheBoard().stream().filter(p -> p instanceof King && p.getColor() == chessRules.opponent(movedPiece.getColor())).findFirst().orElse(null);
+        List<Position> enemyKingPositions = kingLogicMoves(enemyKing);
+
         List<Piece> pieces = chessRules.getPiecesOnTheBoard().stream()
                 .filter(p -> p.getColor() == movedPiece.getColor())
                 .toList();
+
+        List<Position> mindPositions = List.of(
+                new Position(3, 3), new Position(3, 4),
+                new Position(4, 3), new Position(4, 4),
+                new Position(2, 3), new Position(2, 4),
+                new Position(5, 3), new Position(5, 4));
+
 
         System.out.println(movedPiece);
         System.out.println(movedPiece.getColor());
@@ -97,19 +99,43 @@ public class ChessBot {
             else score += 5;
         }
 
+        Set<Position> mindControl = new HashSet<>();
+        Set<Position> kingControl = new HashSet<>();
+
         for (Piece piece : pieces) {
             if (pieceIsVulnerable(piece)) {
                 if (!pieceIsProtected(piece)) score -= findPieceValue(piece) + 200;
+                else if (pieceIsProtected(piece)) score -= findPieceValue(piece) / 4;
+            }
+
+            List<Position> possibleAttacks = chessRules.possibleAttacks(piece);
+
+            for (Position position : possibleAttacks) {
+                if (!chessRules.getBoard().positionExists(position)) break;
+
+                if (chessRules.thereIsAOpponentPiece(position)){
+                    Piece opponentPiece = chessRules.getBoard().piece(position);
+                    if (pieceIsProtected(opponentPiece)) score += findPieceValue(opponentPiece) / 10;
+                    else score += findPieceValue(opponentPiece) / 5;
+                }
+
+                for (Position mindPosition : mindPositions) {
+                    if (mindPosition.equals(position)) mindControl.add(mindPosition);
+                }
+
+                if(chessRules.getBoard().thereIsAPiece(position) && chessRules.getBoard().piece(position).getColor() == movedPiece.getColor()) score += 5;
+
+                for (Position kingMove: enemyKingPositions) {
+                    if (kingMove.equals(position)) kingControl.add(kingMove);
+                }
             }
         }
 
-        for (Position position : possibleAttacks) {
-            if (chessRules.thereIsAOpponentPiece(position)){
-                Piece piece = chessRules.getBoard().piece(position);
-                if (pieceIsProtected(piece)) score += findPieceValue(piece) / 10;
-                else score += findPieceValue(piece) / 5;
-            };
-        }
+        System.out.println(mindControl.size());
+        System.out.println(kingControl.size());
+
+        score += mindControl.size() * 5;
+        score += kingControl.size() * 10;
 
         List<Piece> pawns = pieces.stream().filter(p -> p instanceof Pawn).toList();
         for (Piece pawn : pawns) {
@@ -128,31 +154,26 @@ public class ChessBot {
                 if (pawn.getPosition().getRow() < 4) score += 5;
                 if (pawn.getPosition().getRow() < 3) score += 5;
                 if (pawn.getPosition().getRow() < 2) score += 5;
-                if (pawn.getPosition().getRow() == 0) score += 40;
+                if (pawn.getPosition().getRow() == 0) score += 500;
             } else {
                 if (pawn.getPosition().getRow() > 4) score += 5;
                 if (pawn.getPosition().getRow() > 5) score += 5;
                 if (pawn.getPosition().getRow() > 6) score += 5;
-                if (pawn.getPosition().getRow() == 7) score += 40;
+                if (pawn.getPosition().getRow() == 7) score += 500;
             }
          }
 
-        List<Position> mindPositions = List.of(
-                new Position(3, 3), new Position(3, 4),
-                new Position(4, 3), new Position(4, 4),
-                new Position(2, 3), new Position(2, 4),
-                new Position(5, 3), new Position(5, 4));
 
-        for (Position position : mindPositions) {
-            for (Position attack : possibleAttacks){
-                if (position.equals(attack)) score += 5;
-            }
+
+
+        if (chessRules.getCheck()){
+            if (chessRules.getCheckmate()) score += 5000;
+
+            score += 40 + (8 - possibleMoves(enemyKing).size()) * 10;
         }
 
          return score;
     }
-
-
 
     private boolean pieceIsProtected(Piece piece) {
         List<Piece> pieces = chessRules.getPiecesOnTheBoard().stream()
@@ -186,5 +207,29 @@ public class ChessBot {
             case QUEEN -> 900;
             default -> 0;
         };
+    }
+
+    private List<Position> kingLogicMoves(Piece king) {
+        List<Position> kingMoves = new ArrayList<>();
+
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                if (king.movesLogic()[i][j]) kingMoves.add(new Position(i, j));
+            }
+        }
+
+        return kingMoves;
+    }
+
+    public List<Position> possibleMoves(Piece piece) {
+        List<Position> possibleMoves = new ArrayList<>();
+
+        for(int i = 0; i < 8; i++) {
+            for(int j = 0; j < 8; j++) {
+                if(chessRules.legalMovement(piece.getPosition())[i][j]) possibleMoves.add(new Position(i, j));
+            }
+        }
+
+        return possibleMoves;
     }
 }
