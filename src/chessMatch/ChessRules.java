@@ -126,6 +126,11 @@ public class ChessRules {
         return capturedPiece;
     }
 
+    public void botMove(){
+        Move move = bot.findBestMove();
+        performMove(move.getSource(), move.getTarget());
+    }
+
     public Piece makeMove(Position sourcePosition, Position targetPosition) {
         Piece capturedPiece = null;
         Piece piece = board.removePiece(sourcePosition);

@@ -1,7 +1,6 @@
 package gui;
 
 import chessMatch.ChessRules;
-import chessMatch.Move;
 import chessMatch.Piece;
 import chessMatch.Position;
 
@@ -162,10 +161,17 @@ public class BoardController implements Initializable {
     }
 
     public void botMove() {
-        Move move = chessRules.getBot().findBestMove();
-        Position sourcePosition = move.getSource();
-        Position targetPosition = move.getTarget();
-        tryPerformMove(sourcePosition, targetPosition);
+        double delay = ThreadLocalRandom.current().nextDouble(0.75, 1);
+
+        PauseTransition pause = new PauseTransition(Duration.seconds(delay));
+        pause.setOnFinished(event -> {
+            chessRules.botMove();
+            if (chessRules.getPromoted() != null) chessRules.replacePromotedPiece("Queen");
+            updateBoard();
+        });
+
+        pause.play();
+        checkEndGame();
     }
 
     private void tryPerformMove(Position sourcePosition, Position targetPosition) {
@@ -177,33 +183,30 @@ public class BoardController implements Initializable {
             chessRules.performMove(sourcePosition, targetPosition);
             updateBoard();
             if (chessRules.getPromoted() != null) loadPromotedPieceView(chessRules.getPromoted());
-            if (chessRules.getCheckmate()){
-                String KingWinner = chessRules.getTurn() == chessMatch.Color.WHITE ? "whiteKing.png" : "blackKing.png";
-                Image kingWins = new Image("/gui/pieces/" + KingWinner);
-                ImageView imageView = new ImageView(kingWins);
-                imageView.setFitWidth(40);
-                imageView.setFitHeight(40);
-                playerWinsLabel.setGraphic(imageView);
-                loadEndGameView("Checkmate", chessRules.getTurn() == chessMatch.Color.WHITE ? "Brancas vencem" : "Pretas vencem");
-            }
-            if (chessRules.getStalemate()) loadEndGameView("Afogamento", "Empate");
-            if (chessRules.getDraw()) loadEndGameView("Material Insuficiente", "Empate");
+            checkEndGame();
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
             clearSelection();
         }
 
-        if (chessRules.getTurn() == chessRules.getBot().getColor()) {
-            double delay = ThreadLocalRandom.current().nextDouble(0.75, 1);
-
-            PauseTransition pause = new PauseTransition(Duration.seconds(delay));
-            pause.setOnFinished(event -> {
-                botMove();
-                updateBoard();
-            });
-            pause.play();
+        if (chessRules.getTurn() == chessRules.getBot().getBotColor()) {
+            botMove();
         }
+    }
+
+    private void checkEndGame() {
+        if (chessRules.getCheckmate()){
+            String KingWinner = chessRules.getTurn() == chessMatch.Color.WHITE ? "whiteKing.png" : "blackKing.png";
+            Image kingWins = new Image("/gui/pieces/" + KingWinner);
+            ImageView imageView = new ImageView(kingWins);
+            imageView.setFitWidth(40);
+            imageView.setFitHeight(40);
+            playerWinsLabel.setGraphic(imageView);
+            loadEndGameView("Checkmate", chessRules.getTurn() == chessMatch.Color.WHITE ? "Brancas vencem" : "Pretas vencem");
+        }
+        if (chessRules.getStalemate()) loadEndGameView("Afogamento", "Empate");
+        if (chessRules.getDraw()) loadEndGameView("Material Insuficiente", "Empate");
     }
 
     private void handlerCellClick(int row, int col) {
