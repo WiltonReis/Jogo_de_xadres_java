@@ -2,8 +2,6 @@ package bot;
 
 import chessMatch.*;
 import chessMatch.ChessPieces.King;
-import chessMatch.ChessPieces.Knight;
-import chessMatch.ChessPieces.Pawn;
 
 import java.util.*;
 
@@ -70,7 +68,6 @@ public class ChessBot {
     }
 
     private int movedScore(Move move) {
-        Piece movedPiece = move.getPieceMoved();
         List<Piece> allPieces = new ArrayList<>(chessRules.getPiecesOnTheBoard());
 
         Piece botKing = getKing(botColor);
@@ -79,21 +76,19 @@ public class ChessBot {
         List<Position> botKingMoves = kingLogicMoves(botKing);
         List<Position> enemyKingMoves = kingLogicMoves(enemyKing);
 
-        Map<Color, Set<Position>> kingControl = new HashMap<>();
-        Map<Color, Set<Position>> centralControl = new HashMap<>();
-
         int score = 0;
 
-        for (Piece piece : allPieces) {
-            score += evaluatePiece(piece, allPieces, botKing, centralControl);
-            score += evaluateKing(kingControl, botKingMoves, enemyKingMoves, piece, move);
+        if (move.getPieceMoved() instanceof King && move.getPieceMoved().getMoveCount() == 0){
+            if (move.getTarget().getColumn() == 2 || move.getTarget().getColumn() == 6){
+                score += move.getPieceMoved().getColor() == botColor ? + 50 : - 50;
+            }
         }
 
-        score += centralControl.getOrDefault(botColor, Set.of()).size() * 5;
-        score -= centralControl.getOrDefault(chessRules.opponent(botColor), Set.of()).size() * 5;
+        score += evaluateKingSafetyAndAttack(allPieces, botKingMoves, enemyKingMoves);
 
-        score += kingControl.getOrDefault(botColor, Set.of()).size() * 10;
-        score -= kingControl.getOrDefault(chessRules.opponent(botColor), Set.of()).size() * 10;
+        for (Piece piece : allPieces) {
+            score += evaluatePiece(piece);
+        }
 
         score += evaluateCheck(enemyKing, botColor);
 
@@ -101,9 +96,8 @@ public class ChessBot {
         return score;
     }
 
-    private int evaluatePiece(Piece piece, List<Piece> allPieces, Piece botKing, Map<Color, Set<Position>> centralControl) {
+    private int evaluatePiece(Piece piece) {
         int score = 0;
-        Color opponent = chessRules.opponent(botColor);
 
         int positionScore = pieceScoreTable.getValue(piece.getType(), piece.getColor(), piece.getPosition());
 
@@ -121,29 +115,23 @@ public class ChessBot {
         return score;
     }
 
-    private int  evaluateKing(Map<Color, Set<Position>> control, List<Position> botKingMoves, List<Position> enemyKingMoves, Piece piece, Move move) {
-        int score = 0;
-        Piece king = getKing(piece.getColor());
+    private int evaluateKingSafetyAndAttack(List<Piece> allPieces, List<Position> botKingMoves, List<Position> enemyKingMoves) {
+        int kingScore = 0;
 
-        int kingRow = king.getPosition().getRow();
-
-        if (botKingMoves.contains(piece.getPosition()) && piece.getColor() != botColor) control.computeIfAbsent(piece.getColor(), c -> new HashSet<>()).add(piece.getPosition());
-        if (enemyKingMoves.contains(piece.getPosition()) && piece.getColor() == botColor){
-            control.computeIfAbsent(piece.getColor(), c -> new HashSet<>()).add(piece.getPosition());
-
-            if (piece instanceof Pawn){
-                kingRow = botColor == Color.WHITE ? -1 : +1;
-                if (piece.getPosition().getRow() == kingRow) score += 20;
+        for (Piece piece : allPieces) {
+            if (piece.getColor() == botColor) {
+                for (Position possibleAttack : chessRules.possibleAttacks(piece)){
+                    if (enemyKingMoves.contains(possibleAttack)) kingScore += 10;
+                }
+            } else{
+                for (Position possibleAttack : chessRules.possibleAttacks(piece)){
+                    if (botKingMoves.contains(possibleAttack)) kingScore -= 10;
+                }
             }
         }
 
-        if (move.getPieceMoved() == king) {
-            if (king.getMoveCount() == 0 && move.getTarget().getColumn() == 2 || move.getTarget().getColumn() == 6){
-                score += king.getColor() == botColor ? + 50 : - 50;
-            }
-        }
 
-        return score;
+        return kingScore;
     }
 
     private int evaluateCheck(Piece enemyKing, Color botColor) {
