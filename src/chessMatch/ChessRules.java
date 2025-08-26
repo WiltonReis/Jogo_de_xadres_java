@@ -2,6 +2,7 @@ package chessMatch;
 
 import bot.ChessBot;
 import chessMatch.ChessPieces.*;
+import javafx.geometry.Pos;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +16,7 @@ public class ChessRules {
     private boolean checkmate;
     private boolean stalemate;
     private boolean draw;
+    private boolean IfEnPassantMove;
     private Piece enPassant;
     private Piece promoted;
     private ChessBot bot;
@@ -26,7 +28,7 @@ public class ChessRules {
         board = new Board();
         turn = Color.WHITE;
         initialSetup();
-        bot = new ChessBot(Color.BLACK, this);
+        bot = new ChessBot(this, Color.BLACK);
     }
 
     public Board getBoard() {
@@ -71,6 +73,34 @@ public class ChessRules {
 
     public boolean getDraw() {
         return draw;
+    }
+
+    public boolean getIfEnPassantMove() {
+        return IfEnPassantMove;
+    }
+
+    public void setCheck(boolean check) {
+        this.check = check;
+    }
+
+    public void setCheckmate(boolean checkmate) {
+        this.checkmate = checkmate;
+    }
+
+    public void setStalemate(boolean stalemate) {
+        this.stalemate = stalemate;
+    }
+
+    public void setDraw(boolean draw) {
+        this.draw = draw;
+    }
+
+    public void setIfEnPassantMove(boolean ifEnPassantMove) {
+        this.IfEnPassantMove = ifEnPassantMove;
+    }
+
+    public void setEnPassant(Piece enPassant) {
+        this.enPassant = enPassant;
     }
 
     public Piece performMove(Position source, Position target) {
@@ -158,8 +188,9 @@ public class ChessRules {
                 if (piece.getColor() == Color.WHITE) enPassantPosition = new Position(targetPosition.getRow() + 1, targetPosition.getColumn());
                 else enPassantPosition = new Position(targetPosition.getRow() - 1, targetPosition.getColumn());
                 capturedPiece = board.removePiece(enPassantPosition);
-            }
-        }
+                IfEnPassantMove = true;
+            } else IfEnPassantMove = false;
+        } else IfEnPassantMove = false;
 
         if (capturedPiece != null){
             piecesOnTheBoard.remove(capturedPiece);
@@ -177,7 +208,21 @@ public class ChessRules {
         piece.decrementMoveCount();
 
         if (capturedPiece != null){
-            board.placePiece(capturedPiece, targetPosition);
+            // A posição da peça capturada no en passant não é a targetPosition
+            Position capturedPiecePosition;
+            if (piece instanceof Pawn && sourcePosition.getColumn() != targetPosition.getColumn() && IfEnPassantMove) {
+                // Se foi en passant, a peça capturada volta para uma posição diferente
+                if (piece.getColor() == Color.WHITE) {
+                    capturedPiecePosition = new Position(targetPosition.getRow() + 1, targetPosition.getColumn());
+                } else {
+                    capturedPiecePosition = new Position(targetPosition.getRow() - 1, targetPosition.getColumn());
+                }
+            } else {
+                // Se foi uma captura normal, a peça volta para a casa de destino
+                capturedPiecePosition = targetPosition;
+            }
+
+            board.placePiece(capturedPiece, capturedPiecePosition);
             capturedPieces.remove(capturedPiece);
             piecesOnTheBoard.add(capturedPiece);
         }
@@ -197,18 +242,6 @@ public class ChessRules {
             board.placePiece(rook, sourceRook);
             rook.decrementMoveCount();
         }
-
-        //#specialmove en passant
-        if (piece instanceof Pawn) {
-            if(sourcePosition.getColumn() != targetPosition.getColumn() && capturedPiece == enPassant) {
-                Position enPassantPosition;
-                Piece pawn = board.removePiece(targetPosition);
-                if (piece.getColor() == Color.WHITE) enPassantPosition = new Position(3, targetPosition.getColumn());
-                else enPassantPosition = new Position(4, targetPosition.getColumn());
-                board.placePiece(capturedPiece, enPassantPosition);
-            }
-        }
-
 
     }
 
@@ -297,6 +330,10 @@ public class ChessRules {
         return legalMoves;
     }
 
+    public boolean possibleMove(Position sourcePosition, Position targetPosition) {
+        return legalMovement(sourcePosition)[targetPosition.getRow()][targetPosition.getColumn()];
+    }
+
     private boolean hasAnyLegalMove(Color color) {
          List<Piece> pieces = piecesOnTheBoard.stream()
                 .filter(piece -> piece.getColor() == color)
@@ -317,7 +354,6 @@ public class ChessRules {
         List<Piece> pieces = piecesOnTheBoard.stream().filter(piece -> piece.getColor() == color).toList();
         List<Move> moves = new ArrayList<>();
 
-        Piece capturedPiece = null;
         boolean[][] legalMoves;
 
         for (Piece piece : pieces) {
@@ -326,8 +362,10 @@ public class ChessRules {
             for (int i = 0; i < legalMoves.length; i++) {
                 for (int j = 0; j < legalMoves[i].length; j++) {
                     if (legalMoves[i][j]) {
+
                         Position sourcePosition = new Position(piece.getPosition().getRow(), piece.getPosition().getColumn());
                         Position targetPosition = new Position(i, j);
+
                         moves.add(new Move(sourcePosition, targetPosition, piece));
                     }
                 }

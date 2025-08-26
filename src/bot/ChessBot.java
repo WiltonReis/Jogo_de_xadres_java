@@ -13,7 +13,7 @@ public class ChessBot {
 
     private final PieceScoreTable pieceScoreTable = new PieceScoreTable();
 
-    public ChessBot(Color color, ChessRules chessRules) {
+    public ChessBot(ChessRules chessRules, Color color) {
         this.botColor = color;
         this.chessRules = chessRules;
     }
@@ -28,21 +28,38 @@ public class ChessBot {
         if (possibleMoves.size() == 1) return possibleMoves.get(0);
 
         List<Move> scoredMoves = new ArrayList<>();
+        int depth = 3;
 
         for (Move move : possibleMoves) {
 
+            boolean oldCheck = chessRules.getCheck();
+            boolean oldCheckmate = chessRules.getCheckmate();
+            boolean oldStalemate = chessRules.getStalemate();
+            boolean oldDraw = chessRules.getDraw();
+            boolean oldIfEnPassantMove = chessRules.getIfEnPassantMove();
+            Piece oldEnPassant = chessRules.getEnPassant();
+
             Piece capturedPiece = chessRules.makeMove(move.getSource(), move.getTarget());
 
-            move.setScore(scoreBase() + movedScore(move));
+            move.setScore(Minimax.minimax(chessRules, depth - 1, Integer.MIN_VALUE, Integer.MAX_VALUE, false, botColor));
             scoredMoves.add(move);
 
+
             chessRules.undoMove(move.getSource(), move.getTarget(), capturedPiece);
+
+            chessRules.setCheck(oldCheck);
+            chessRules.setCheckmate(oldCheckmate);
+            chessRules.setStalemate(oldStalemate);
+            chessRules.setDraw(oldDraw);
+            chessRules.setIfEnPassantMove(oldIfEnPassantMove);
+            chessRules.setEnPassant(oldEnPassant);
+
 
         }
 
         scoredMoves.sort((a, b) -> Integer.compare(b.getScore(), a.getScore()));
 
-        int topMoves = 1;
+        int topMoves = 3;
         if (scoredMoves.size() < topMoves) topMoves = scoredMoves.size();
 
         List<Move> bestMoves = new ArrayList<>();
@@ -54,7 +71,28 @@ public class ChessBot {
         return bestMoves.get(random.nextInt(bestMoves.size()));
     }
 
-    private int scoreBase() {
+    public int evaluateBoard() {
+        List<Piece> allPieces = chessRules.getPiecesOnTheBoard();
+
+        Piece botKing = getKing(botColor);
+        Piece enemyKing = getKing(chessRules.opponent(botColor));
+
+        List<Position> botKingMoves = kingLogicMoves(botKing);
+        List<Position> enemyKingMoves = kingLogicMoves(enemyKing);
+
+        int score = scoreBase();
+
+        for (Piece piece : allPieces) {
+            score += evaluatePiece(piece);
+        }
+
+        score += evaluateKingSafetyAndAttack(botKingMoves, enemyKingMoves);
+        score += evaluateCheck(enemyKing, botColor);
+
+        return score;
+    }
+
+    public int scoreBase() {
         int score = 0;
 
         for (Piece piece : chessRules.getPiecesOnTheBoard()) {
@@ -68,7 +106,6 @@ public class ChessBot {
     }
 
     private int movedScore(Move move) {
-        List<Piece> allPieces = new ArrayList<>(chessRules.getPiecesOnTheBoard());
 
         Piece botKing = getKing(botColor);
         Piece enemyKing = getKing(chessRules.opponent(botColor));
@@ -84,15 +121,6 @@ public class ChessBot {
             }
         }
 
-        score += evaluateKingSafetyAndAttack(allPieces, botKingMoves, enemyKingMoves);
-
-        for (Piece piece : allPieces) {
-            score += evaluatePiece(piece);
-        }
-
-        score += evaluateCheck(enemyKing, botColor);
-
-        System.out.println(score);
         return score;
     }
 
@@ -105,18 +133,21 @@ public class ChessBot {
 
         if (pieceIsVulnerable(piece)) {
             score += pieceIsProtected(piece)
-                    ? (piece.getColor() == botColor ? -findPieceValue(piece) / 4 : findPieceValue(piece) / 10)
-                    : (piece.getColor() == botColor ? -findPieceValue(piece) - 200 : findPieceValue(piece) / 5);
+                    ? (piece.getColor() == botColor ? -findPieceValue(piece) / 2 : findPieceValue(piece) / 4)
+                    : (piece.getColor() == botColor ? -findPieceValue(piece) - 500 : findPieceValue(piece));
         }
+
         if (pieceIsProtected(piece)) {
-            score += (piece.getColor() == botColor ? 5 : -5);
+            score += (piece.getColor() == botColor ? 10 : -10);
         }
 
         return score;
     }
 
-    private int evaluateKingSafetyAndAttack(List<Piece> allPieces, List<Position> botKingMoves, List<Position> enemyKingMoves) {
+    private int evaluateKingSafetyAndAttack(List<Position> botKingMoves, List<Position> enemyKingMoves) {
         int kingScore = 0;
+
+        List<Piece> allPieces = new ArrayList<>(chessRules.getPiecesOnTheBoard());
 
         for (Piece piece : allPieces) {
             if (piece.getColor() == botColor) {
