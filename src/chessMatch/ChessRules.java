@@ -75,10 +75,6 @@ public class ChessRules {
         return draw;
     }
 
-    public boolean getIfEnPassantMove() {
-        return IfEnPassantMove;
-    }
-
     public void setCheck(boolean check) {
         this.check = check;
     }
@@ -93,10 +89,6 @@ public class ChessRules {
 
     public void setDraw(boolean draw) {
         this.draw = draw;
-    }
-
-    public void setIfEnPassantMove(boolean ifEnPassantMove) {
-        this.IfEnPassantMove = ifEnPassantMove;
     }
 
     public void setEnPassant(Piece enPassant) {
@@ -135,12 +127,6 @@ public class ChessRules {
         //#specialmove pawn
         if(movedPiece instanceof Pawn) {
 
-            //#specialmove en passant
-            if(targetPosition.getRow() == sourcePosition.getRow() - 2 || targetPosition.getRow() == sourcePosition.getRow() + 2){
-            enPassant = movedPiece;
-            System.out.println(movedPiece);
-            } else enPassant = null;
-
             //#specialmove promotion
             if(targetPosition.getRow() == 0 || targetPosition.getRow() == 7){
                 promoted = movedPiece;
@@ -163,18 +149,18 @@ public class ChessRules {
 
     public Piece makeMove(Position sourcePosition, Position targetPosition) {
         Piece capturedPiece = null;
-        Piece piece = board.removePiece(sourcePosition);
+        Piece movedPiece = board.removePiece(sourcePosition);
         if (board.thereIsAPiece(targetPosition)) capturedPiece = board.removePiece(targetPosition);
 
 
         //#specialmove castling
-        if (piece instanceof King && targetPosition.getColumn() == sourcePosition.getColumn() + 2){
+        if (movedPiece instanceof King && targetPosition.getColumn() == sourcePosition.getColumn() + 2){
             Position castlingPosition = new Position(sourcePosition.getRow(), sourcePosition.getColumn() + 3);
             Piece castlingRook = board.removePiece(castlingPosition);
             board.placePiece(castlingRook, new Position(sourcePosition.getRow(), sourcePosition.getColumn() + 1));
             castlingRook.incrementMoveCount();
         }
-        if (piece instanceof King && targetPosition.getColumn() == sourcePosition.getColumn() - 2){
+        if (movedPiece instanceof King && targetPosition.getColumn() == sourcePosition.getColumn() - 2){
             Position castlingPosition = new Position(sourcePosition.getRow(), sourcePosition.getColumn() - 4);
             Piece castlingRook = board.removePiece(castlingPosition);
             board.placePiece(castlingRook, new Position(sourcePosition.getRow(), sourcePosition.getColumn() - 1));
@@ -182,23 +168,24 @@ public class ChessRules {
         }
 
         //#specialmove en passant
-        if (piece instanceof Pawn) {
-            if(sourcePosition.getColumn() != targetPosition.getColumn() && capturedPiece == null) {
-                Position enPassantPosition;
-                if (piece.getColor() == Color.WHITE) enPassantPosition = new Position(targetPosition.getRow() + 1, targetPosition.getColumn());
-                else enPassantPosition = new Position(targetPosition.getRow() - 1, targetPosition.getColumn());
-                capturedPiece = board.removePiece(enPassantPosition);
-                IfEnPassantMove = true;
-            } else IfEnPassantMove = false;
-        } else IfEnPassantMove = false;
+        if (movedPiece instanceof Pawn) {
+
+            //#specialmove en passant
+            if(targetPosition.getRow() == sourcePosition.getRow() - 2 || targetPosition.getRow() == sourcePosition.getRow() + 2){
+                enPassant = movedPiece;
+            } else enPassant = null;
+
+        } else{
+            enPassant = null;
+        }
 
         if (capturedPiece != null){
             piecesOnTheBoard.remove(capturedPiece);
             capturedPieces.add(capturedPiece);
         }
-        board.placePiece(piece, targetPosition);
+        board.placePiece(movedPiece, targetPosition);
 
-        piece.incrementMoveCount();
+        movedPiece.incrementMoveCount();
         return capturedPiece;
     }
 
@@ -208,17 +195,16 @@ public class ChessRules {
         piece.decrementMoveCount();
 
         if (capturedPiece != null){
-            // A posição da peça capturada no en passant não é a targetPosition
+
+            //#specialmove en passant
             Position capturedPiecePosition;
-            if (piece instanceof Pawn && sourcePosition.getColumn() != targetPosition.getColumn() && IfEnPassantMove) {
-                // Se foi en passant, a peça capturada volta para uma posição diferente
+            if (piece instanceof Pawn && sourcePosition.getColumn() != targetPosition.getColumn() && capturedPiece == enPassant) {
                 if (piece.getColor() == Color.WHITE) {
                     capturedPiecePosition = new Position(targetPosition.getRow() + 1, targetPosition.getColumn());
                 } else {
                     capturedPiecePosition = new Position(targetPosition.getRow() - 1, targetPosition.getColumn());
                 }
             } else {
-                // Se foi uma captura normal, a peça volta para a casa de destino
                 capturedPiecePosition = targetPosition;
             }
 
@@ -243,6 +229,7 @@ public class ChessRules {
             rook.decrementMoveCount();
         }
 
+        enPassant = null;
     }
 
     public void replacePromotedPiece(String pieceType) {

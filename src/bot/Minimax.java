@@ -1,5 +1,6 @@
 package bot;
 
+import chessMatch.ChessPieces.TypePiece;
 import chessMatch.ChessRules;
 import chessMatch.Color;
 import chessMatch.Move;
@@ -17,10 +18,10 @@ public class Minimax {
 
         List<Move> possibleMoves = chessRules.possibleMoves(isMaximizing ? botColor : chessRules.opponent(botColor));
 
+        possibleMoves.sort((a, b) -> Integer.compare(scoreMove(chessRules, b), scoreMove(chessRules, a)));
+
         if (isMaximizing){
             int maxScore = Integer.MIN_VALUE;
-
-
 
             int legalMovesFound = 0;
 
@@ -30,7 +31,6 @@ public class Minimax {
                 boolean oldCheckmate = chessRules.getCheckmate();
                 boolean oldStalemate = chessRules.getStalemate();
                 boolean oldDraw = chessRules.getDraw();
-                boolean oldIfEnPassantMove = chessRules.getIfEnPassantMove();
                 Piece oldEnPassant = chessRules.getEnPassant();
 
                 Piece capturedPiece = chessRules.makeMove(move.getSource(), move.getTarget());
@@ -47,7 +47,6 @@ public class Minimax {
                 chessRules.setCheckmate(oldCheckmate);
                 chessRules.setStalemate(oldStalemate);
                 chessRules.setDraw(oldDraw);
-                chessRules.setIfEnPassantMove(oldIfEnPassantMove);
                 chessRules.setEnPassant(oldEnPassant);
 
                 if (beta <= alpha){
@@ -68,7 +67,6 @@ public class Minimax {
                 boolean oldCheckmate = chessRules.getCheckmate();
                 boolean oldStalemate = chessRules.getStalemate();
                 boolean oldDraw = chessRules.getDraw();
-                boolean oldIfEnPassantMove = chessRules.getIfEnPassantMove();
                 Piece oldEnPassant = chessRules.getEnPassant();
 
                 Piece capturedPiece = chessRules.makeMove(move.getSource(), move.getTarget());
@@ -86,7 +84,6 @@ public class Minimax {
                 chessRules.setCheckmate(oldCheckmate);
                 chessRules.setStalemate(oldStalemate);
                 chessRules.setDraw(oldDraw);
-                chessRules.setIfEnPassantMove(oldIfEnPassantMove);
                 chessRules.setEnPassant(oldEnPassant);
 
                 if (beta <= alpha){
@@ -97,6 +94,34 @@ public class Minimax {
 
             return minScore;
         }
+    }
+
+    private static int scoreMove(ChessRules chessRules, Move move) {
+        int score = 0;
+        Piece targetPiece = chessRules.getBoard().piece(move.getTarget());
+
+        if (targetPiece != null) {
+            score = 10 * getPieceValue(targetPiece) - getPieceValue(move.getPieceMoved());
+        }
+
+        if (move.getPieceMoved().getType() == TypePiece.PAWN) {
+            if (move.getTarget().getRow() == 0 || move.getTarget().getRow() == 7) {
+                score += 900;
+            }
+        }
+
+        return score;
+    }
+
+    private static int getPieceValue(Piece piece) {
+        if (piece == null) return 0;
+        return switch (piece.getType()) {
+            case PAWN -> 100;
+            case KNIGHT, BISHOP -> 300;
+            case ROOK -> 500;
+            case QUEEN -> 900;
+            default -> 0;
+        };
     }
 
 }

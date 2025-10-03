@@ -2,6 +2,7 @@ package bot;
 
 import chessMatch.*;
 import chessMatch.ChessPieces.King;
+import chessMatch.ChessPieces.Pawn;
 
 import java.util.*;
 
@@ -36,7 +37,6 @@ public class ChessBot {
             boolean oldCheckmate = chessRules.getCheckmate();
             boolean oldStalemate = chessRules.getStalemate();
             boolean oldDraw = chessRules.getDraw();
-            boolean oldIfEnPassantMove = chessRules.getIfEnPassantMove();
             Piece oldEnPassant = chessRules.getEnPassant();
 
             Piece capturedPiece = chessRules.makeMove(move.getSource(), move.getTarget());
@@ -51,9 +51,7 @@ public class ChessBot {
             chessRules.setCheckmate(oldCheckmate);
             chessRules.setStalemate(oldStalemate);
             chessRules.setDraw(oldDraw);
-            chessRules.setIfEnPassantMove(oldIfEnPassantMove);
             chessRules.setEnPassant(oldEnPassant);
-
 
         }
 
@@ -72,6 +70,8 @@ public class ChessBot {
     }
 
     public int evaluateBoard() {
+        int score = 0;
+
         List<Piece> allPieces = chessRules.getPiecesOnTheBoard();
 
         Piece botKing = getKing(botColor);
@@ -80,27 +80,33 @@ public class ChessBot {
         List<Position> botKingMoves = kingLogicMoves(botKing);
         List<Position> enemyKingMoves = kingLogicMoves(enemyKing);
 
-        int score = scoreBase();
+        List<Piece> whitePawns = new ArrayList<>();
+        List<Piece> blackPawns = new ArrayList<>();
 
         for (Piece piece : allPieces) {
-            score += evaluatePiece(piece);
+            score += scoreBase(piece);
+
+            if (piece instanceof Pawn) {
+                if (piece.getColor() == Color.WHITE) whitePawns.add(piece);
+                else blackPawns.add(piece);
+            }
         }
 
         score += evaluateKingSafetyAndAttack(botKingMoves, enemyKingMoves);
         score += evaluateCheck(enemyKing, botColor);
 
+        score += scorePawnStructure(whitePawns, blackPawns);
+
         return score;
     }
 
-    public int scoreBase() {
+    public int scoreBase(Piece piece) {
         int score = 0;
 
-        for (Piece piece : chessRules.getPiecesOnTheBoard()) {
+        int pieceValue = findPieceValue(piece);
 
-            int pieceValue = findPieceValue(piece);
-
-            score += piece.getColor() == botColor ? pieceValue : -pieceValue;
-        }
+        score += piece.getColor() == botColor ? pieceValue : -pieceValue;
+        score += evaluatePiece(piece);
 
         return score;
     }
@@ -142,6 +148,84 @@ public class ChessBot {
         }
 
         return score;
+    }
+
+    private int scorePawnStructure(List<Piece> whitePawns, List<Piece> blackPawns) {
+        int score = 0;
+
+        int whiteScore = evaluatePawnsStructureForColor(whitePawns, blackPawns);
+        int blackScore = evaluatePawnsStructureForColor(blackPawns, whitePawns);
+
+        score += botColor == Color.WHITE ? (whiteScore - blackScore) : (blackScore - whiteScore);
+
+        return score;
+    }
+
+    private int evaluatePawnsStructureForColor(List<Piece> allyPawns, List<Piece> enemyPawns) {
+        int pawnScore = 0;
+        final int DOUBLE_PAWN_PENALTY = -10;
+        final int ISOLATED_PAWN_PENALTY = -15;
+        final int PASSED_PAWN_BONUS = 30;
+
+        Map<Integer, Integer> allyPawnCountByColumn = new HashMap<>();
+        Map<Integer, Integer> enemyPawnCountByColumn = new HashMap<>();
+
+        for (Piece pawn : allyPawns) {
+            int col = pawn.getPosition().getColumn();
+            allyPawnCountByColumn.put(col, allyPawnCountByColumn.getOrDefault(col, 0) + 1);
+        }
+
+        for (Piece piece : enemyPawns) {
+            int col = piece.getPosition().getColumn();
+            enemyPawnCountByColumn.put(col, enemyPawnCountByColumn.getOrDefault(col, 0) + 1);
+        }
+
+        for (Piece pawn : allyPawns){
+            int col = pawn.getPosition().getColumn();
+            int row = pawn.getPosition().getRow();
+
+            Color pawnColor = pawn.getColor();
+
+            if (allyPawnCountByColumn.get(col) > 1) pawnScore += DOUBLE_PAWN_PENALTY;
+
+            boolean hasSupportLeft = allyPawnCountByColumn.containsKey(col - 1);
+            boolean hasSupportRight = allyPawnCountByColumn.containsKey(col + 1);
+
+            if (!hasSupportLeft && !hasSupportRight) pawnScore += ISOLATED_PAWN_PENALTY;
+
+            boolean isPassedPawn = true;
+
+            for (int c = col - 1; c<= col; c++){
+                if (c < 0 || c > 7) continue;
+
+                for (Piece enemyPawn : enemyPawns){
+                    if (enemyPawn.getPosition().getColumn() == c){
+                        if (pawnColor == Color.WHITE && enemyPawn.getPosition().getRow() <  row){
+                            isPassedPawn = false;
+                            break;
+                        }
+                        if (pawnColor == Color.BLACK && enemyPawn.getPosition().getRow() >  row){
+                            isPassedPawn = false;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (isPassedPawn) {
+                int passedPawnBonus = 0;
+
+                if (pawnColor == Color.WHITE) {
+                    passedPawnBonus = row * 10;
+                } else {
+                    passedPawnBonus = (8 - row) * 10;
+                }
+
+                pawnScore += PASSED_PAWN_BONUS + passedPawnBonus;
+            }
+        }
+
+        return pawnScore;
     }
 
     private int evaluateKingSafetyAndAttack(List<Position> botKingMoves, List<Position> enemyKingMoves) {
