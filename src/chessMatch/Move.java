@@ -5,12 +5,14 @@ public class Move {
     private Position source;
     private Position target;
     private Piece pieceMoved;
+    private Piece capturedPiece;
     private int score;
 
-    public Move(Position source, Position target, Piece pieceMoved) {
+    public Move(Position source, Position target, Piece pieceMoved, Piece capturedPiece) {
         this.source = source;
         this.target = target;
         this.pieceMoved = pieceMoved;
+        this.capturedPiece = capturedPiece;
     }
 
     public Position getSource() {
@@ -31,5 +33,9 @@ public class Move {
 
     public void setScore(int score) {
         this.score = score;
+    }
+
+    public Piece getCapturedPiece() {
+        return capturedPiece;
     }
 }

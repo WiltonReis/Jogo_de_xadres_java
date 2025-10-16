@@ -98,47 +98,25 @@ public class ChessRules {
     public Piece performMove(Position source, Position target) {
         Position sourcePosition = validateSource(source);
         Position targetPosition = validateTarget(target, sourcePosition);
-        Piece movedPiece = board.piece(sourcePosition);
-        Piece capturedPiece = makeMove(sourcePosition, targetPosition);
+        GameState gameState = makeMove(sourcePosition, targetPosition);
+
+        Piece capturedPiece = gameState.capturedPiece();
 
 
-        if (testCheck(turn)){
-            check = false;
-            undoMove(sourcePosition, targetPosition, capturedPiece);
+        if (testCheck(gameState.turn())){
+            undoMove(sourcePosition, targetPosition, gameState);
             throw new ChessException("You can't put yourself in check");
         }
 
-        if (testCheck(opponent(turn))){
-            if (!hasAnyLegalMove(opponent(turn))){
-                checkmate = true;
-                System.out.println("Checkmate!");
-                return null;
-            }
-            check = true;
-            System.out.println("Check!");
+        if (hasAnyLegalMove(turn)){
+            System.out.println("has any legal move");
+            check = testCheck(turn);
+        } else {
+            checkmate = testCheck(turn);
+            stalemate = !checkmate;
+            System.out.println("has no legal move " + checkmate );
         }
 
-        if (!hasAnyLegalMove(opponent(turn)))
-            stalemate = true;
-
-        if (testInsufficientMaterial())
-            draw = true;
-
-        //#specialmove pawn
-        if(movedPiece instanceof Pawn) {
-
-            //#specialmove promotion
-            if(targetPosition.getRow() == 0 || targetPosition.getRow() == 7){
-                promoted = movedPiece;
-                return capturedPiece;
-            } else promoted = null;
-        } else{
-            promoted = null;
-            enPassant = null;
-        }
-
-
-        changeTurn();
         return capturedPiece;
     }
 
@@ -147,13 +125,41 @@ public class ChessRules {
         performMove(move.getSource(), move.getTarget());
     }
 
-    public Piece makeMove(Position sourcePosition, Position targetPosition) {
-        Piece capturedPiece = null;
+    public GameState makeMove(Position sourcePosition, Position targetPosition) {
+        GameState previousState = new GameState(turn, check, checkmate, stalemate, draw, enPassant, null, false);
+
         Piece movedPiece = board.removePiece(sourcePosition);
-        if (board.thereIsAPiece(targetPosition)) capturedPiece = board.removePiece(targetPosition);
+
+        Piece capturedPiece = null;
+
+        boolean ifEnPassantMove = false;
+
+        if (board.thereIsAPiece(targetPosition))
+            capturedPiece = board.removePiece(targetPosition);
 
 
-        //#specialmove castling
+        board.placePiece(movedPiece, targetPosition);
+
+        movedPiece.incrementMoveCount();
+
+        //#specialmove en passant capture
+        if (movedPiece instanceof Pawn) {
+
+            if (capturedPiece == null && targetPosition.getColumn() != sourcePosition.getColumn()) {
+                Position enPassantPosition = new Position(sourcePosition.getRow(), targetPosition.getColumn());
+                Piece enPassantPiece = board.piece(enPassantPosition);
+                ifEnPassantMove = true;
+                if (enPassantPiece == enPassant) capturedPiece = board.removePiece(enPassantPosition);
+            }
+        }
+
+        if (capturedPiece != null){
+            piecesOnTheBoard.remove(capturedPiece);
+            capturedPieces.add(capturedPiece);
+        }
+
+
+            //#specialmove castling
         if (movedPiece instanceof King && targetPosition.getColumn() == sourcePosition.getColumn() + 2){
             Position castlingPosition = new Position(sourcePosition.getRow(), sourcePosition.getColumn() + 3);
             Piece castlingRook = board.removePiece(castlingPosition);
@@ -167,43 +173,39 @@ public class ChessRules {
             castlingRook.incrementMoveCount();
         }
 
-        //#specialmove en passant
+        turn = opponent(turn);
+
+        check = false;
+        checkmate = false;
+        stalemate = false;
+        draw = false;
+        enPassant = null;
+        promoted = null;
+
+        //#specialmove en passant set
         if (movedPiece instanceof Pawn) {
-
-            //#specialmove en passant
-            if(targetPosition.getRow() == sourcePosition.getRow() - 2 || targetPosition.getRow() == sourcePosition.getRow() + 2){
+            if (targetPosition.getRow() == sourcePosition.getRow() - 2 || targetPosition.getRow() == sourcePosition.getRow() + 2) {
                 enPassant = movedPiece;
-            } else enPassant = null;
-
-        } else{
-            enPassant = null;
+            }
         }
 
-        if (capturedPiece != null){
-            piecesOnTheBoard.remove(capturedPiece);
-            capturedPieces.add(capturedPiece);
-        }
-        board.placePiece(movedPiece, targetPosition);
-
-        movedPiece.incrementMoveCount();
-        return capturedPiece;
+        return new GameState(previousState.turn(), previousState.check(), previousState.checkmate(), previousState.stalemate(),
+                previousState.draw(), previousState.enPassant(), capturedPiece, ifEnPassantMove);
     }
 
-    public void undoMove(Position sourcePosition, Position targetPosition, Piece capturedPiece) {
+    public void undoMove(Position sourcePosition, Position targetPosition, GameState previousState) {
         Piece piece = board.removePiece(targetPosition);
         board.placePiece(piece, sourcePosition);
         piece.decrementMoveCount();
+
+        Piece capturedPiece = previousState.capturedPiece();
 
         if (capturedPiece != null){
 
             //#specialmove en passant
             Position capturedPiecePosition;
-            if (piece instanceof Pawn && sourcePosition.getColumn() != targetPosition.getColumn() && capturedPiece == enPassant) {
-                if (piece.getColor() == Color.WHITE) {
-                    capturedPiecePosition = new Position(targetPosition.getRow() + 1, targetPosition.getColumn());
-                } else {
-                    capturedPiecePosition = new Position(targetPosition.getRow() - 1, targetPosition.getColumn());
-                }
+            if (piece instanceof Pawn && sourcePosition.getColumn() != targetPosition.getColumn() && capturedPiece == previousState.enPassant() && previousState.ifEnPassant()) {
+                capturedPiecePosition = new Position(sourcePosition.getRow(), targetPosition.getColumn());
             } else {
                 capturedPiecePosition = targetPosition;
             }
@@ -229,7 +231,13 @@ public class ChessRules {
             rook.decrementMoveCount();
         }
 
-        enPassant = null;
+        turn = previousState.turn();
+
+        check = previousState.check();
+        checkmate = previousState.checkmate();
+        stalemate = previousState.stalemate();
+        draw = previousState.draw();
+        enPassant = previousState.enPassant();
     }
 
     public void replacePromotedPiece(String pieceType) {
@@ -307,9 +315,9 @@ public class ChessRules {
                 if (movesLogic[i][j]) {
                     Position targetPosition = new Position(i, j);
 
-                    Piece capturedPiece = makeMove(sourcePosition, targetPosition);
+                    GameState gameState = makeMove(sourcePosition, targetPosition);
                     boolean testCheck = testCheck(piece.getColor());
-                    undoMove(sourcePosition, targetPosition, capturedPiece);
+                    undoMove(sourcePosition, targetPosition, gameState);
                     if (!testCheck) legalMoves[i][j] = true;
                 }
                 }
@@ -341,19 +349,27 @@ public class ChessRules {
         List<Piece> pieces = piecesOnTheBoard.stream().filter(piece -> piece.getColor() == color).toList();
         List<Move> moves = new ArrayList<>();
 
-        boolean[][] legalMoves;
+        boolean[][] pieceMoves;
 
         for (Piece piece : pieces) {
-            legalMoves = legalMovement(piece.getPosition());
+            pieceMoves = piece.movesLogic();
 
-            for (int i = 0; i < legalMoves.length; i++) {
-                for (int j = 0; j < legalMoves[i].length; j++) {
-                    if (legalMoves[i][j]) {
+            for (int i = 0; i < pieceMoves.length; i++) {
+                for (int j = 0; j < pieceMoves[i].length; j++) {
+                    if (pieceMoves[i][j]) {
 
                         Position sourcePosition = new Position(piece.getPosition().getRow(), piece.getPosition().getColumn());
                         Position targetPosition = new Position(i, j);
 
-                        moves.add(new Move(sourcePosition, targetPosition, piece));
+                        GameState gameState = makeMove(sourcePosition, targetPosition);
+                        boolean testCheck = testCheck(piece.getColor());
+                        undoMove(sourcePosition, targetPosition, gameState);
+
+                        if (testCheck) continue;
+
+                        Piece capturedPiece = gameState.capturedPiece();
+
+                        moves.add(new Move(sourcePosition, targetPosition, piece, capturedPiece));
                     }
                 }
             }

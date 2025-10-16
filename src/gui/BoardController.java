@@ -168,10 +168,10 @@ public class BoardController implements Initializable {
             chessRules.botMove();
             if (chessRules.getPromoted() != null) chessRules.replacePromotedPiece("Queen");
             updateBoard();
+            checkEndGame();
         });
 
         pause.play();
-        checkEndGame();
     }
 
     private void tryPerformMove(Position sourcePosition, Position targetPosition) {
@@ -196,14 +196,16 @@ public class BoardController implements Initializable {
     }
 
     private void checkEndGame() {
+        System.out.println("testando: " + chessRules.getCheckmate());
         if (chessRules.getCheckmate()){
-            String KingWinner = chessRules.getTurn() == chessMatch.Color.WHITE ? "whiteKing.png" : "blackKing.png";
+            System.out.println("Checkmate");
+            String KingWinner = chessRules.getTurn() != chessMatch.Color.WHITE ? "whiteKing.png" : "blackKing.png";
             Image kingWins = new Image("/gui/pieces/" + KingWinner);
             ImageView imageView = new ImageView(kingWins);
             imageView.setFitWidth(40);
             imageView.setFitHeight(40);
             playerWinsLabel.setGraphic(imageView);
-            loadEndGameView("Checkmate", chessRules.getTurn() == chessMatch.Color.WHITE ? "Brancas vencem" : "Pretas vencem");
+            loadEndGameView("Checkmate", chessRules.getTurn() != chessMatch.Color.WHITE ? "Brancas vencem" : "Pretas vencem");
         }
         if (chessRules.getStalemate()) loadEndGameView("Afogamento", "Empate");
         if (chessRules.getDraw()) loadEndGameView("Material Insuficiente", "Empate");

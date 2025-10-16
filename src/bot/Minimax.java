@@ -1,22 +1,25 @@
 package bot;
 
+import chessMatch.*;
 import chessMatch.ChessPieces.TypePiece;
-import chessMatch.ChessRules;
-import chessMatch.Color;
-import chessMatch.Move;
-import chessMatch.Piece;
 
 import java.util.List;
 
 public class Minimax {
 
-    public static int minimax(ChessRules chessRules, int depth, int alpha, int beta, boolean isMaximizing, Color botColor) {
+    private static final int QUIESCENCE_MAX_DEPTH = 3;
 
-        if (depth == 0 || chessRules.getCheckmate() || chessRules.getDraw() || chessRules.getStalemate()){
+    public static int minimax(ChessRules chessRules, int depth, int alpha, int beta, boolean isMaximizing) {
+
+
+        if (depth == 0) return chessRules.getBot().evaluateBoard();
+        //if (depth == 0) return quiescenceSearch(chessRules, depth, alpha, beta, isMaximizing);
+
+        if (chessRules.getCheckmate() || chessRules.getDraw() || chessRules.getStalemate()){
             return chessRules.getBot().evaluateBoard();
         }
 
-        List<Move> possibleMoves = chessRules.possibleMoves(isMaximizing ? botColor : chessRules.opponent(botColor));
+        List<Move> possibleMoves = chessRules.possibleMoves(isMaximizing ? Color.WHITE : Color.BLACK);
 
         possibleMoves.sort((a, b) -> Integer.compare(scoreMove(chessRules, b), scoreMove(chessRules, a)));
 
@@ -27,27 +30,15 @@ public class Minimax {
 
             for (Move move : possibleMoves){
 
-                boolean oldCheck = chessRules.getCheck();
-                boolean oldCheckmate = chessRules.getCheckmate();
-                boolean oldStalemate = chessRules.getStalemate();
-                boolean oldDraw = chessRules.getDraw();
-                Piece oldEnPassant = chessRules.getEnPassant();
-
-                Piece capturedPiece = chessRules.makeMove(move.getSource(), move.getTarget());
+               GameState gameState = chessRules.makeMove(move.getSource(), move.getTarget());
 
 
-                int score = minimax(chessRules, depth - 1, alpha, beta, false, botColor);
+                int score = minimax(chessRules, depth - 1, alpha, beta, false);
                 maxScore = Math.max(maxScore, score);
                 alpha = Math.max(alpha, score);
                 legalMovesFound++;
 
-                chessRules.undoMove(move.getSource(), move.getTarget(), capturedPiece);
-
-                chessRules.setCheck(oldCheck);
-                chessRules.setCheckmate(oldCheckmate);
-                chessRules.setStalemate(oldStalemate);
-                chessRules.setDraw(oldDraw);
-                chessRules.setEnPassant(oldEnPassant);
+                chessRules.undoMove(move.getSource(), move.getTarget(), gameState);
 
                 if (beta <= alpha){
                     break;
@@ -63,28 +54,16 @@ public class Minimax {
 
             for (Move move : possibleMoves){
 
-                boolean oldCheck = chessRules.getCheck();
-                boolean oldCheckmate = chessRules.getCheckmate();
-                boolean oldStalemate = chessRules.getStalemate();
-                boolean oldDraw = chessRules.getDraw();
-                Piece oldEnPassant = chessRules.getEnPassant();
+                GameState gameState = chessRules.makeMove(move.getSource(), move.getTarget());
 
-                Piece capturedPiece = chessRules.makeMove(move.getSource(), move.getTarget());
-
-                int score = minimax(chessRules, depth - 1, alpha, beta,true, botColor);
+                int score = minimax(chessRules, depth - 1, alpha, beta,true);
 
                 minScore = Math.min(minScore, score);
                 beta = Math.min(beta, score);
 
                 legalMovesFound++;
 
-                chessRules.undoMove(move.getSource(), move.getTarget(), capturedPiece);
-
-                chessRules.setCheck(oldCheck);
-                chessRules.setCheckmate(oldCheckmate);
-                chessRules.setStalemate(oldStalemate);
-                chessRules.setDraw(oldDraw);
-                chessRules.setEnPassant(oldEnPassant);
+                chessRules.undoMove(move.getSource(), move.getTarget(), gameState);
 
                 if (beta <= alpha){
                     break;
@@ -96,7 +75,46 @@ public class Minimax {
         }
     }
 
-    private static int scoreMove(ChessRules chessRules, Move move) {
+    private static int quiescenceSearch(ChessRules chessRules, int depth, int alpha, int beta, boolean isMaximizing) {
+
+        int standPat = chessRules.getBot().evaluateBoard();
+
+        if (depth >= QUIESCENCE_MAX_DEPTH || chessRules.getCheckmate() || chessRules.getStalemate() || chessRules.getDraw()) return standPat;
+
+        if (isMaximizing) {
+            alpha = Math.max(standPat, alpha);
+            if (alpha >= beta) return alpha;
+        } else {
+            beta = Math.min(standPat, beta);
+            if (beta <= alpha) return beta;
+        }
+
+        List<Move> captureMove = chessRules.possibleMoves(isMaximizing ? Color.WHITE : Color.BLACK).stream().filter(move -> move.getCapturedPiece() != null).toList();
+        captureMove.sort((a, b) -> Integer.compare(scoreMove(chessRules, b), scoreMove(chessRules, a)));
+
+        for (Move move : captureMove){
+            GameState gameState = chessRules.makeMove(move.getSource(), move.getTarget());
+
+            int score = quiescenceSearch(chessRules, depth +1, alpha, beta, !isMaximizing);
+
+            chessRules.undoMove(move.getSource(), move.getTarget(), gameState);
+
+            if (isMaximizing){
+                alpha = Math.max(alpha, score);
+            } else {
+                beta = Math.min(beta, score);
+            }
+
+            if (beta <= alpha){
+                break;
+            }
+        }
+
+        return isMaximizing ? alpha : beta;
+
+    }
+
+    public static int scoreMove(ChessRules chessRules, Move move) {
         int score = 0;
         Piece targetPiece = chessRules.getBoard().piece(move.getTarget());
 
