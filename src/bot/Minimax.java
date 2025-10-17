@@ -3,6 +3,7 @@ package bot;
 import chessMatch.*;
 import chessMatch.ChessPieces.TypePiece;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Minimax {
@@ -11,9 +12,8 @@ public class Minimax {
 
     public static int minimax(ChessRules chessRules, int depth, int alpha, int beta, boolean isMaximizing) {
 
-
-        if (depth == 0) return chessRules.getBot().evaluateBoard();
-        //if (depth == 0) return quiescenceSearch(chessRules, depth, alpha, beta, isMaximizing);
+        //if (depth == 0) return chessRules.getBot().evaluateBoard();
+        if (depth == 0) return quiescenceSearch(chessRules, QUIESCENCE_MAX_DEPTH, alpha, beta, isMaximizing);
 
         if (chessRules.getCheckmate() || chessRules.getDraw() || chessRules.getStalemate()){
             return chessRules.getBot().evaluateBoard();
@@ -26,17 +26,13 @@ public class Minimax {
         if (isMaximizing){
             int maxScore = Integer.MIN_VALUE;
 
-            int legalMovesFound = 0;
-
             for (Move move : possibleMoves){
 
                GameState gameState = chessRules.makeMove(move.getSource(), move.getTarget());
 
-
                 int score = minimax(chessRules, depth - 1, alpha, beta, false);
                 maxScore = Math.max(maxScore, score);
                 alpha = Math.max(alpha, score);
-                legalMovesFound++;
 
                 chessRules.undoMove(move.getSource(), move.getTarget(), gameState);
 
@@ -50,8 +46,6 @@ public class Minimax {
         } else {
             int minScore = Integer.MAX_VALUE;
 
-            int legalMovesFound = 0;
-
             for (Move move : possibleMoves){
 
                 GameState gameState = chessRules.makeMove(move.getSource(), move.getTarget());
@@ -60,8 +54,6 @@ public class Minimax {
 
                 minScore = Math.min(minScore, score);
                 beta = Math.min(beta, score);
-
-                legalMovesFound++;
 
                 chessRules.undoMove(move.getSource(), move.getTarget(), gameState);
 
@@ -77,58 +69,73 @@ public class Minimax {
 
     private static int quiescenceSearch(ChessRules chessRules, int depth, int alpha, int beta, boolean isMaximizing) {
 
-        int standPat = chessRules.getBot().evaluateBoard();
+        int standScore = chessRules.getBot().evaluateBoard();
 
-        if (depth >= QUIESCENCE_MAX_DEPTH || chessRules.getCheckmate() || chessRules.getStalemate() || chessRules.getDraw()) return standPat;
+        if (depth <= 0 || chessRules.getCheckmate() || chessRules.getStalemate() || chessRules.getDraw())
+            return standScore;
 
-        if (isMaximizing) {
-            alpha = Math.max(standPat, alpha);
-            if (alpha >= beta) return alpha;
-        } else {
-            beta = Math.min(standPat, beta);
-            if (beta <= alpha) return beta;
-        }
+        if (isMaximizing){
+            alpha = Math.max(alpha, standScore);
+        } else beta = Math.min(beta, standScore);
 
-        List<Move> captureMove = chessRules.possibleMoves(isMaximizing ? Color.WHITE : Color.BLACK).stream().filter(move -> move.getCapturedPiece() != null).toList();
+        List<Move> captureMove = new ArrayList<>(chessRules.possibleMoves(isMaximizing ? Color.WHITE : Color.BLACK).stream().filter(move -> move.getCapturedPiece() != null).toList());
         captureMove.sort((a, b) -> Integer.compare(scoreMove(chessRules, b), scoreMove(chessRules, a)));
 
-        for (Move move : captureMove){
-            GameState gameState = chessRules.makeMove(move.getSource(), move.getTarget());
+        if (isMaximizing){
+            int maxScore = Integer.MIN_VALUE;
 
-            int score = quiescenceSearch(chessRules, depth +1, alpha, beta, !isMaximizing);
+            for (Move move : captureMove){
 
-            chessRules.undoMove(move.getSource(), move.getTarget(), gameState);
+                GameState gameState = chessRules.makeMove(move.getSource(), move.getTarget());
 
-            if (isMaximizing){
+                int score = quiescenceSearch(chessRules, depth - 1, alpha, beta, false);
+                maxScore = Math.max(maxScore, score);
                 alpha = Math.max(alpha, score);
-            } else {
-                beta = Math.min(beta, score);
+
+                chessRules.undoMove(move.getSource(), move.getTarget(), gameState);
+
+                if (beta <= alpha){
+                    break;
+                }
             }
 
-            if (beta <= alpha){
-                break;
+        } else {
+            int minScore = Integer.MAX_VALUE;
+
+            for (Move move : captureMove){
+
+                GameState gameState = chessRules.makeMove(move.getSource(), move.getTarget());
+
+                int score = quiescenceSearch(chessRules, depth - 1, alpha, beta,true);
+
+                minScore = Math.min(minScore, score);
+                beta = Math.min(beta, score);
+
+                chessRules.undoMove(move.getSource(), move.getTarget(), gameState);
+
+                if (beta <= alpha){
+                    break;
+                }
+
             }
         }
 
         return isMaximizing ? alpha : beta;
-
     }
 
     public static int scoreMove(ChessRules chessRules, Move move) {
-        int score = 0;
+        final int CAPTURE_SCORE = 5000;
+        final int PROMOTION_SCORE = 10000;
+
         Piece targetPiece = chessRules.getBoard().piece(move.getTarget());
 
-        if (targetPiece != null) {
-            score = 10 * getPieceValue(targetPiece) - getPieceValue(move.getPieceMoved());
-        }
+        if (move.getPieceMoved().getType() == TypePiece.PAWN && move.getTarget().getRow() == 0 || move.getTarget().getRow() == 7)
+            return PROMOTION_SCORE;
 
-        if (move.getPieceMoved().getType() == TypePiece.PAWN) {
-            if (move.getTarget().getRow() == 0 || move.getTarget().getRow() == 7) {
-                score += 900;
-            }
-        }
+        if (targetPiece != null)
+            return CAPTURE_SCORE + (getPieceValue(targetPiece) - getPieceValue(move.getPieceMoved()));
 
-        return score;
+        return 0;
     }
 
     private static int getPieceValue(Piece piece) {
