@@ -14,6 +14,8 @@ out/
 bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
+.iml
+.idea/
 
 ### NetBeans ###
 /nbproject/private/
@@ -27,3 +29,7 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+### Gradle ###
+.gradle/
+build/
