@@ -163,10 +163,10 @@ public class ChessBot {
 
         score = pieceScoreTable.getValue(piece.getType(), piece.getColor(), piece.getPosition(), gamePhase);
 
-        return score;
+        return piece.getColor() == Color.WHITE ? score : -score;
     }
 
-    private int scoreProtectedAndVulnerablePiece(Piece piece, Set<Position> possibleAttacksWhite, Set<Position> possibleAttacksBlack) {
+    public int scoreProtectedAndVulnerablePiece(Piece piece, Set<Position> possibleAttacksWhite, Set<Position> possibleAttacksBlack) {
         int score = 0;
 
         boolean isVulnerable;
@@ -180,6 +180,7 @@ public class ChessBot {
             isProtected = possibleAttacksBlack.contains(piece.getPosition());
         }
 
+        System.out.println("Piece: " + piece + " isVulnerable: " + isVulnerable + " isProtected: " + isProtected);
 
         if (isVulnerable) {
             score += isProtected ? -findPieceValue(piece) / 4 : -findPieceValue(piece) - 300;
@@ -188,6 +189,8 @@ public class ChessBot {
         if (isProtected) {
             score += 10;
         }
+
+
 
         return piece.getColor() == Color.WHITE ? score : -score;
     }
