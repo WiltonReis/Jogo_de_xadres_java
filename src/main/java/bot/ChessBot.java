@@ -125,8 +125,19 @@ public class ChessBot {
 
         double gamePhase = Math.min(1.0, (double) currentScorePhase / TOTAL_SCORE_PHASE);
 
+        score = evaluateTotalScore(allPieces, possibleAttacksWhite, possibleAttacksBlack, whiteKingMoves, blackKingMoves, whitePawns, blackPawns, gamePhase);
+
+        return score;
+    }
+
+    private int evaluateTotalScore(List<Piece> allPieces, Set<Position> possibleAttacksWhite, Set<Position> possibleAttacksBlack,
+                                   List<Position> whiteKingMoves, List<Position> blackKingMoves, List<Piece> whitePawns, List<Piece> blackPawns, double gamePhase){
+        int score = 0;
+
         for (Piece piece : allPieces){
-            score += scoreBase(piece, possibleAttacksWhite, possibleAttacksBlack, gamePhase);
+            score += scorePiecesInBoard(piece);
+            score += ScorePSC(piece, gamePhase);
+            score += scoreProtectedAndVulnerablePiece(piece, possibleAttacksWhite, possibleAttacksBlack);
         }
 
         score += evaluateKingSafetyAndAttack(whiteKingMoves, blackKingMoves);
@@ -137,21 +148,26 @@ public class ChessBot {
         return score;
     }
 
-    public int scoreBase(Piece piece, Set<Position> possibleAttacksWhite, Set<Position> possibleAttacksBlack, double gamePhase) {
+    public int scorePiecesInBoard(Piece piece){
         int score = 0;
 
         int pieceValue = findPieceValue(piece);
 
         score += piece.getColor() == Color.WHITE ? pieceValue : -pieceValue;
-        score += evaluatePiece(piece, possibleAttacksWhite, possibleAttacksBlack, gamePhase);
 
         return score;
     }
 
-    private int evaluatePiece(Piece piece, Set<Position> possibleAttacksWhite, Set<Position> possibleAttacksBlack, double gamePhase) {
+    public int ScorePSC(Piece piece, double gamePhase){
         int score = 0;
 
-        score = pieceScoreTable.getValue(piece.getType(), piece.getColor(), piece.getPosition(),gamePhase);
+        score = pieceScoreTable.getValue(piece.getType(), piece.getColor(), piece.getPosition(), gamePhase);
+
+        return score;
+    }
+
+    private int scoreProtectedAndVulnerablePiece(Piece piece, Set<Position> possibleAttacksWhite, Set<Position> possibleAttacksBlack) {
+        int score = 0;
 
         boolean isVulnerable;
         boolean isProtected;
@@ -166,9 +182,7 @@ public class ChessBot {
 
 
         if (isVulnerable) {
-            score += isProtected
-                    ? (piece.getColor() == botColor ? -findPieceValue(piece) / 2 : findPieceValue(piece) / 4)
-                    : (piece.getColor() == botColor ? -findPieceValue(piece) - 300 : findPieceValue(piece));
+            score += isProtected ? -findPieceValue(piece) / 4 : -findPieceValue(piece) - 300;
         }
 
         if (isProtected) {
@@ -178,7 +192,7 @@ public class ChessBot {
         return piece.getColor() == Color.WHITE ? score : -score;
     }
 
-    private int scorePawnStructure(List<Piece> whitePawns, List<Piece> blackPawns) {
+    public int scorePawnStructure(List<Piece> whitePawns, List<Piece> blackPawns) {
 
         int whiteScore = evaluatePawnsStructureForColor(whitePawns, blackPawns);
         int blackScore = evaluatePawnsStructureForColor(blackPawns, whitePawns);
@@ -284,7 +298,7 @@ public class ChessBot {
 
         Piece opponentKing = getKing(chessRules.opponent(chessRules.getTurn()));
 
-        score += chessRules.getCheckmate() ? 9999 : 50 + (8 - chessRules.possibleMovesForPiece(opponentKing).size()) * 10;
+        score += chessRules.getCheckmate() ? 9999 : 50 + (8 - chessRules.possibleMovesForPiece(opponentKing).size()) * 5;
 
         return chessRules.getTurn() == Color.WHITE ?  -score :  score;
     }
