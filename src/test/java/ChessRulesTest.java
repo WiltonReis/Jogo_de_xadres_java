@@ -19,7 +19,6 @@ public class ChessRulesTest {
         chessRules = new ChessRules();
         board = chessRules.getBoard();
         clearBoard();
-
     }
 
     private void clearBoard() {
