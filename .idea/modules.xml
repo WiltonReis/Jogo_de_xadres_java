@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/resources.iml" filepath="$PROJECT_DIR$/resources.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/src/main/xadrez-em-java.src.main.iml" filepath="$PROJECT_DIR$/.idea/modules/src/main/xadrez-em-java.src.main.iml" />
     </modules>
   </component>
 </project>
