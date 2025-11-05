@@ -27,7 +27,7 @@ public class ChessRules {
         board = new Board();
         turn = Color.WHITE;
         initialSetup();
-        //bot = new ChessBot(this, Color.BLACK);
+        bot = new ChessBot(this, Color.BLACK);
     }
 
     public Board getBoard() {

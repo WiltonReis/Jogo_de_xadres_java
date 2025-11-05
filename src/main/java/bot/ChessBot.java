@@ -125,33 +125,49 @@ public class ChessBot {
 
         double gamePhase = Math.min(1.0, (double) currentScorePhase / TOTAL_SCORE_PHASE);
 
+        score = evaluateTotalScore(whiteKing, blackKing, allPieces, possibleAttacksWhite, possibleAttacksBlack, whiteKingMoves, blackKingMoves, whitePawns, blackPawns, gamePhase);
+
+        return score;
+    }
+
+    private int evaluateTotalScore(Piece whiteKing, Piece blackKing, List<Piece> allPieces, Set<Position> possibleAttacksWhite, Set<Position> possibleAttacksBlack,
+                                   List<Position> whiteKingMoves, List<Position> blackKingMoves, List<Piece> whitePawns, List<Piece> blackPawns, double gamePhase){
+        int score = 0;
+
         for (Piece piece : allPieces){
-            score += scoreBase(piece, possibleAttacksWhite, possibleAttacksBlack, gamePhase);
+            score += scorePiecesInBoard(piece);
+            score += ScorePSC(piece, gamePhase);
+            score += scoreProtectedAndVulnerablePiece(piece, possibleAttacksWhite, possibleAttacksBlack);
         }
 
-        score += evaluateKingSafetyAndAttack(whiteKingMoves, blackKingMoves);
-        score += evaluateCheck();
+        score += evaluateKingAttack(whiteKingMoves, blackKingMoves);
+        score += evaluateCheck(chessRules.getTurn() == Color.WHITE ? blackKing : whiteKing);
 
         score += scorePawnStructure(whitePawns, blackPawns);
 
         return score;
     }
 
-    public int scoreBase(Piece piece, Set<Position> possibleAttacksWhite, Set<Position> possibleAttacksBlack, double gamePhase) {
+    public int scorePiecesInBoard(Piece piece){
         int score = 0;
 
         int pieceValue = findPieceValue(piece);
 
         score += piece.getColor() == Color.WHITE ? pieceValue : -pieceValue;
-        score += evaluatePiece(piece, possibleAttacksWhite, possibleAttacksBlack, gamePhase);
 
         return score;
     }
 
-    private int evaluatePiece(Piece piece, Set<Position> possibleAttacksWhite, Set<Position> possibleAttacksBlack, double gamePhase) {
+    public int ScorePSC(Piece piece, double gamePhase){
         int score = 0;
 
-        score = pieceScoreTable.getValue(piece.getType(), piece.getColor(), piece.getPosition(),gamePhase);
+        score = pieceScoreTable.getValue(piece.getType(), piece.getColor(), piece.getPosition(), gamePhase);
+
+        return piece.getColor() == Color.WHITE ? score : -score;
+    }
+
+    public int scoreProtectedAndVulnerablePiece(Piece piece, Set<Position> possibleAttacksWhite, Set<Position> possibleAttacksBlack) {
+        int score = 0;
 
         boolean isVulnerable;
         boolean isProtected;
@@ -164,27 +180,26 @@ public class ChessBot {
             isProtected = possibleAttacksBlack.contains(piece.getPosition());
         }
 
-
         if (isVulnerable) {
-            score += isProtected
-                    ? (piece.getColor() == botColor ? -findPieceValue(piece) / 2 : findPieceValue(piece) / 4)
-                    : (piece.getColor() == botColor ? -findPieceValue(piece) - 300 : findPieceValue(piece));
+            score += isProtected ? -findPieceValue(piece) / 4 : -findPieceValue(piece) - 300;
         }
 
         if (isProtected) {
             score += 10;
         }
 
+
+
         return piece.getColor() == Color.WHITE ? score : -score;
     }
 
-    private int scorePawnStructure(List<Piece> whitePawns, List<Piece> blackPawns) {
+    public int scorePawnStructure(List<Piece> whitePawns, List<Piece> blackPawns) {
 
         int whiteScore = evaluatePawnsStructureForColor(whitePawns, blackPawns);
         int blackScore = evaluatePawnsStructureForColor(blackPawns, whitePawns);
 
 
-        return  whiteScore - blackScore;
+        return  whiteScore + blackScore;
     }
 
     private int evaluatePawnsStructureForColor(List<Piece> allyPawns, List<Piece> enemyPawns) {
@@ -206,55 +221,78 @@ public class ChessBot {
             enemyPawnCountByColumn.put(col, enemyPawnCountByColumn.getOrDefault(col, 0) + 1);
         }
 
-        for (Piece pawn : allyPawns){
+        for (Piece pawn : allyPawns) {
             int col = pawn.getPosition().getColumn();
             int row = pawn.getPosition().getRow();
 
             Color pawnColor = pawn.getColor();
 
-            if (allyPawnCountByColumn.get(col) > 1) pawnScore += DOUBLE_PAWN_PENALTY;
-
-            boolean hasSupportLeft = allyPawnCountByColumn.containsKey(col - 1);
-            boolean hasSupportRight = allyPawnCountByColumn.containsKey(col + 1);
-
-            if (!hasSupportLeft && !hasSupportRight) pawnScore += ISOLATED_PAWN_PENALTY;
-
-            boolean isPassedPawn = true;
-
-            for (int c = col - 1; c<= col + 1; c++){
-                if (c < 0 || c > 7) continue;
-
-                for (Piece enemyPawn : enemyPawns){
-                    if (enemyPawn.getPosition().getColumn() == c){
-                        if (pawnColor == Color.WHITE && enemyPawn.getPosition().getRow() <  row){
-                            isPassedPawn = false;
-                            break;
-                        }
-                        if (pawnColor == Color.BLACK && enemyPawn.getPosition().getRow() >  row){
-                            isPassedPawn = false;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if (isPassedPawn) {
-                int passedPawnBonus = 0;
-
-                if (pawnColor == Color.WHITE) {
-                    passedPawnBonus = row * 10;
-                } else {
-                    passedPawnBonus = (8 - row) * 10;
-                }
-
-                pawnScore += PASSED_PAWN_BONUS + passedPawnBonus;
-            }
+            pawnScore += doublePawnScore(col, pawnColor, allyPawnCountByColumn, DOUBLE_PAWN_PENALTY);
+            pawnScore += isolatedPawnScore(col, pawnColor, allyPawnCountByColumn, ISOLATED_PAWN_PENALTY);
+            pawnScore += passedPawnScore(col, row, pawnColor, enemyPawns, PASSED_PAWN_BONUS);
         }
 
         return pawnScore;
     }
 
-    private int evaluateKingSafetyAndAttack(List<Position> whiteKingMoves, List<Position> blackKingMoves) {
+    public int doublePawnScore(int col, Color pawnColor, Map<Integer, Integer> allyPawnCountByColumn, final int DOUBLE_PAWN_PENALTY){
+        int score = 0;
+
+        if (allyPawnCountByColumn.get(col) > 1) score += DOUBLE_PAWN_PENALTY;
+
+        return pawnColor == Color.WHITE ? score : -score;
+    }
+
+    public int isolatedPawnScore(int col, Color pawnColor, Map<Integer, Integer> allyPawnCountByColumn, final int ISOLATED_PAWN_PENALTY){
+        int score = 0;
+
+        boolean hasSupportLeft = allyPawnCountByColumn.containsKey(col - 1);
+        boolean hasSupportRight = allyPawnCountByColumn.containsKey(col + 1);
+
+        if (!hasSupportLeft && !hasSupportRight) score += ISOLATED_PAWN_PENALTY;
+
+        return pawnColor == Color.WHITE ? score : -score;
+    }
+
+    public int passedPawnScore(int col, int row, Color pawnColor, List<Piece> enemyPawns, final int PASSED_PAWN_BONUS){
+        int score = 0;
+        final int BONUS_FOR_ROW = 10;
+
+        boolean isPassedPawn = true;
+
+        for (int c = col - 1; c<= col + 1; c++){
+            if (c < 0 || c > 7) continue;
+
+            for (Piece enemyPawn : enemyPawns){
+                if (enemyPawn.getPosition().getColumn() == c){
+                    if (pawnColor == Color.WHITE && enemyPawn.getPosition().getRow() <  row){
+                        isPassedPawn = false;
+                        break;
+                    }
+                    if (pawnColor == Color.BLACK && enemyPawn.getPosition().getRow() >  row){
+                        isPassedPawn = false;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (isPassedPawn) {
+            int passedPawnBonus = 0;
+
+            if (pawnColor == Color.WHITE) {
+                passedPawnBonus = (7 - row) * BONUS_FOR_ROW;
+            } else {
+                passedPawnBonus = row * BONUS_FOR_ROW;
+            }
+
+            score += PASSED_PAWN_BONUS + passedPawnBonus;
+        }
+
+        return pawnColor == Color.WHITE ? score : -score;
+    }
+
+    public int evaluateKingAttack(List<Position> whiteKingMoves, List<Position> blackKingMoves) {
         int kingScore = 0;
 
         List<Piece> allPieces = new ArrayList<>(chessRules.getPiecesOnTheBoard());
@@ -271,18 +309,15 @@ public class ChessBot {
             }
         }
 
-
         return kingScore;
     }
 
-    private int evaluateCheck() {
+    public int evaluateCheck(Piece opponentKing) {
         if (!chessRules.getCheck()) {
             return 0;
         }
 
         int score = 0;
-
-        Piece opponentKing = getKing(chessRules.opponent(chessRules.getTurn()));
 
         score += chessRules.getCheckmate() ? 9999 : 50 + (8 - chessRules.possibleMovesForPiece(opponentKing).size()) * 10;
 

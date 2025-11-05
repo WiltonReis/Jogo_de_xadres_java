@@ -160,7 +160,7 @@ public class BoardController implements Initializable {
     }
 
     public void botMove() {
-        double delay = ThreadLocalRandom.current().nextDouble(0.5, 0.75);
+        double delay = ThreadLocalRandom.current().nextDouble(0.05);
 
         PauseTransition pause = new PauseTransition(Duration.seconds(delay));
         pause.setOnFinished(event -> {
